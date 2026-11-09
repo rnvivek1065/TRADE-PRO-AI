@@ -1,361 +1,436 @@
-// TRADE PRO AI - Main JavaScript
+// TRADE PRO AI - Main Application Script
+"use strict";
 
-const markets = window.TRADE_MARKETS || {};
+(() => {
+  const markets = window.TRADE_MARKETS || {};
 
-let currentMarket = "Forex";
-let currentPairs = markets.Forex || [];
-let allCryptoPairs = [];
-let selectedPair = currentPairs[0] || null;
+  let currentMarket = "Forex";
+  let currentPairs = markets.Forex || [];
+  let allCryptoPairs = [];
+  let selectedPair = currentPairs[0] || null;
+  let favorites = [];
 
-let favorites = [];
+  const $ = id => document.getElementById(id);
 
-try {
-  favorites = JSON.parse(
-    localStorage.getItem("tradeFavorites") || "[]"
-  );
-
-  if (!Array.isArray(favorites)) favorites = [];
-} catch (error) {
-  favorites = [];
-}
-
-
-// SAVE WATCHLIST
-
-function saveFavorites() {
-  localStorage.setItem(
-    "tradeFavorites",
-    JSON.stringify(favorites)
-  );
-
-  renderWatchlist();
-}
-
-
-// UPDATE MARKET BUTTONS
-
-function updateMarketButtons() {
-  [
-    "Crypto",
-    "Forex",
-    "Stocks",
-    "Gold",
-    "Silver",
-    "Commodities"
-  ].forEach(market => {
-    const button = document.getElementById("btn" + market);
-
-    if (button) {
-      button.classList.toggle(
-        "active",
-        currentMarket === market
-      );
-    }
-  });
-}
-
-
-// CHANGE MARKET
-
-function changeMarket(market) {
-  if (market !== "Crypto" && !markets[market]) return;
-
-  currentMarket = market;
-  updateMarketButtons();
-
-  document.getElementById("pairSearch").value = "";
-  document.getElementById("dropdown").classList.remove("show");
-
-  if (market === "Crypto") {
-    if (allCryptoPairs.length) {
-      currentPairs = allCryptoPairs;
-      selectPair(currentPairs[0]);
-
-      document.getElementById("status").innerText =
-        allCryptoPairs.length + " Binance USDT Spot pairs loaded";
-    } else {
-      loadCryptoPairs();
-    }
-  } else {
-    currentPairs = markets[market];
-    document.getElementById("status").innerText =
-      currentPairs.length + " listed instruments";
-
-    selectPair(currentPairs[0]);
-  }
-}
-
-
-// LOAD BINANCE CRYPTO PAIRS
-
-async function loadCryptoPairs() {
-  document.getElementById("status").innerText =
-    "Loading Binance USDT Spot pairs...";
+  const TIMEFRAME_MAP = {
+    "1": "1m",
+    "5": "5m",
+    "15": "15m",
+    "30": "30m",
+    "60": "1h",
+    "240": "4h",
+    "D": "1d",
+    "W": "1w"
+  };
 
   try {
-    const response = await fetch(
-      "https://api.binance.com/api/v3/exchangeInfo"
+    const saved = JSON.parse(
+      localStorage.getItem("tradeFavorites") || "[]"
     );
-
-    if (!response.ok) throw new Error("API error");
-
-    const data = await response.json();
-
-    allCryptoPairs = data.symbols
-      .filter(s =>
-        s.quoteAsset === "USDT" &&
-        s.status === "TRADING" &&
-        s.isSpotTradingAllowed
-      )
-      .map(s => [
-        s.baseAsset + "/USDT",
-        "BINANCE:" + s.symbol
-      ])
-      .sort((a, b) => a[0].localeCompare(b[0]));
-
-    currentPairs = allCryptoPairs;
-
-    document.getElementById("status").innerText =
-      allCryptoPairs.length + " Binance USDT Spot pairs loaded";
-
-    if (allCryptoPairs.length) {
-      selectPair(allCryptoPairs[0]);
-    }
-  } catch (error) {
-    allCryptoPairs = [
-      ["BTC/USDT", "BINANCE:BTCUSDT"],
-      ["ETH/USDT", "BINANCE:ETHUSDT"],
-      ["BNB/USDT", "BINANCE:BNBUSDT"],
-      ["SOL/USDT", "BINANCE:SOLUSDT"],
-      ["XRP/USDT", "BINANCE:XRPUSDT"],
-      ["DOGE/USDT", "BINANCE:DOGEUSDT"],
-      ["ADA/USDT", "BINANCE:ADAUSDT"]
-    ];
-
-    currentPairs = allCryptoPairs;
-
-    document.getElementById("status").innerText =
-      "Binance unavailable. Backup pairs shown.";
-
-    selectPair(allCryptoPairs[0]);
-  }
-}
-
-
-// OPEN / CLOSE DROPDOWN
-
-function toggleDropdown() {
-  const dropdown = document.getElementById("dropdown");
-
-  dropdown.classList.toggle("show");
-
-  if (dropdown.classList.contains("show")) {
-    document.getElementById("pairSearch").focus();
-    renderPairs();
-  }
-}
-
-
-// SEARCH PAIRS
-
-function renderPairs() {
-  const query = document.getElementById("pairSearch")
-    .value.toUpperCase();
-
-  const box = document.getElementById("pairList");
-
-  box.innerHTML = "";
-
-  const filtered = currentPairs.filter(pair =>
-    pair[0].toUpperCase().includes(query) ||
-    pair[1].toUpperCase().includes(query)
-  );
-
-  filtered.forEach(pair => {
-    const button = document.createElement("button");
-
-    button.className = "pair-item";
-    button.textContent = pair[0];
-
-    button.onclick = () => {
-      selectPair(pair);
-      document.getElementById("dropdown").classList.remove("show");
-    };
-
-    box.appendChild(button);
-  });
-
-  if (filtered.length === 0) {
-    box.innerText = "No matching instruments found.";
-  }
-}
-
-
-// SELECT INSTRUMENT
-
-function selectPair(pair) {
-  if (!pair) return;
-
-  selectedPair = pair;
-
-  document.getElementById("selectedPair").textContent =
-    pair[0];
-
-  loadChart();
-}
-
-
-// ADD FAVORITE
-
-function addFavorite() {
-  if (!selectedPair) return;
-
-  const exists = favorites.some(
-    item => item.symbol === selectedPair[1]
-  );
-
-  if (exists) {
-    alert("Already saved in Watchlist.");
-    return;
+    favorites = Array.isArray(saved) ? saved : [];
+  } catch {
+    favorites = [];
   }
 
-  favorites.push({
-    name: selectedPair[0],
-    symbol: selectedPair[1],
-    market: currentMarket
-  });
-
-  saveFavorites();
-
-  alert("Added to Watchlist!");
-}
-
-
-// SHOW WATCHLIST
-
-function renderWatchlist() {
-  const box = document.getElementById("watchlist");
-
-  if (!box) return;
-
-  box.innerHTML = "";
-
-  if (favorites.length === 0) {
-    box.textContent = "No favorite pairs saved.";
-    return;
+  function setStatus(message) {
+    if ($("status")) $("status").textContent = message;
   }
 
-  favorites.forEach((item, index) => {
-    const row = document.createElement("div");
-    row.className = "watch-item";
+  function updateMarketButtons() {
+    [
+      "Crypto", "Forex", "Stocks",
+      "Gold", "Silver", "Commodities"
+    ].forEach(market => {
+      const button = $("btn" + market);
+      if (button) {
+        button.classList.toggle(
+          "active",
+          currentMarket === market
+        );
+      }
+    });
+  }
 
-    const open = document.createElement("button");
-    open.textContent = "⭐ " + item.name;
+  function saveFavorites() {
+    localStorage.setItem(
+      "tradeFavorites",
+      JSON.stringify(favorites)
+    );
+    renderWatchlist();
+  }
 
-    open.onclick = () => {
-      currentMarket = item.market;
-      updateMarketButtons();
+  async function loadCryptoPairs() {
+    setStatus("Loading Binance Crypto pairs...");
 
-      if (item.market === "Crypto") {
-        currentPairs = allCryptoPairs.length
-          ? allCryptoPairs
-          : [
-              ["BTC/USDT", "BINANCE:BTCUSDT"],
-              ["ETH/USDT", "BINANCE:ETHUSDT"]
-            ];
-      } else {
-        currentPairs = markets[item.market] || [];
+    try {
+      const response = await fetch(
+        "https://api.binance.com/api/v3/exchangeInfo"
+      );
+
+      if (!response.ok) {
+        throw new Error("Binance API unavailable");
       }
 
-      selectPair([item.name, item.symbol]);
-    };
+      const data = await response.json();
 
-    const remove = document.createElement("button");
-    remove.className = "remove";
-    remove.textContent = "✕";
+      allCryptoPairs = data.symbols
+        .filter(s =>
+          s.quoteAsset === "USDT" &&
+          s.status === "TRADING" &&
+          s.isSpotTradingAllowed
+        )
+        .map(s => [
+          s.baseAsset + "/USDT",
+          "BINANCE:" + s.symbol
+        ])
+        .sort((a, b) => a[0].localeCompare(b[0]));
 
-    remove.onclick = () => {
-      favorites.splice(index, 1);
-      saveFavorites();
-    };
+      currentPairs = allCryptoPairs;
 
-    row.appendChild(open);
-    row.appendChild(remove);
+      setStatus(
+        allCryptoPairs.length +
+        " Binance USDT Spot pairs loaded"
+      );
 
-    box.appendChild(row);
-  });
-}
+      if (allCryptoPairs.length) {
+        selectPair(allCryptoPairs[0]);
+      }
 
+    } catch (error) {
+      allCryptoPairs = [
+        ["BTC/USDT", "BINANCE:BTCUSDT"],
+        ["ETH/USDT", "BINANCE:ETHUSDT"],
+        ["BNB/USDT", "BINANCE:BNBUSDT"],
+        ["SOL/USDT", "BINANCE:SOLUSDT"],
+        ["XRP/USDT", "BINANCE:XRPUSDT"],
+        ["DOGE/USDT", "BINANCE:DOGEUSDT"]
+      ];
 
-// LOAD TRADINGVIEW CHART
+      currentPairs = allCryptoPairs;
 
-function loadChart() {
-  if (!selectedPair) return;
+      setStatus(
+        "Binance pair list unavailable. Backup list shown."
+      );
 
-  const chart = document.getElementById("chart");
-  const interval = document.getElementById("timeframe").value;
+      selectPair(allCryptoPairs[0]);
+    }
+  }
 
-  chart.innerHTML = "";
+  function changeMarket(market) {
+    if (market !== "Crypto" && !markets[market]) return;
 
-  const container = document.createElement("div");
-  container.className = "tradingview-widget-container";
-  container.style.height = "100%";
-  container.style.width = "100%";
+    currentMarket = market;
+    updateMarketButtons();
 
-  const widget = document.createElement("div");
-  widget.className = "tradingview-widget-container__widget";
-  widget.style.height = "100%";
-  widget.style.width = "100%";
+    if ($("pairSearch")) $("pairSearch").value = "";
+    if ($("dropdown")) $("dropdown").classList.remove("show");
 
-  const script = document.createElement("script");
+    if (market === "Crypto") {
+      if (allCryptoPairs.length) {
+        currentPairs = allCryptoPairs;
+        setStatus(
+          allCryptoPairs.length + " Crypto pairs loaded"
+        );
+        selectPair(currentPairs[0]);
+      } else {
+        loadCryptoPairs();
+      }
+      return;
+    }
 
-  script.type = "text/javascript";
-  script.async = true;
+    currentPairs = markets[market] || [];
 
-  script.src =
-    "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    setStatus(
+      currentPairs.length + " listed instruments"
+    );
 
-  script.textContent = JSON.stringify({
-    autosize: true,
-    symbol: selectedPair[1],
-    interval: interval,
-    timezone: "Asia/Kolkata",
-    theme: "light",
-    style: "1",
-    locale: "en",
-    allow_symbol_change: true,
-    calendar: false,
-    support_host: "https://www.tradingview.com"
-  });
+    if (currentPairs.length) {
+      selectPair(currentPairs[0]);
+    }
+  }
 
-  container.appendChild(widget);
-  container.appendChild(script);
-  chart.appendChild(container);
-}
+  function toggleDropdown() {
+    const dropdown = $("dropdown");
+    if (!dropdown) return;
 
+    dropdown.classList.toggle("show");
 
-// TEMPORARY ANALYSIS PLACEHOLDER
+    if (dropdown.classList.contains("show")) {
+      $("pairSearch")?.focus();
+      renderPairs();
+    }
+  }
 
-function generateAnalysis() {
-  document.getElementById("signal").innerText = "WAIT";
+  function renderPairs() {
+    const search = $("pairSearch");
+    const box = $("pairList");
 
-  document.getElementById("message").innerText =
-    "Technical analysis engine is not connected yet. No live signal generated.";
-}
+    if (!search || !box) return;
 
+    const query = search.value.toUpperCase();
 
-// INITIALIZE WEBSITE
+    box.innerHTML = "";
 
-function initializeTradePro() {
-  renderWatchlist();
-  changeMarket("Forex");
-}
+    const filtered = currentPairs.filter(pair =>
+      pair[0].toUpperCase().includes(query) ||
+      pair[1].toUpperCase().includes(query)
+    );
 
-if (document.readyState === "loading") {
-  document.addEventListener(
-    "DOMContentLoaded",
-    initializeTradePro
-  );
-} else {
-  initializeTradePro();
-}
+    filtered.forEach(pair => {
+      const button = document.createElement("button");
+
+      button.className = "pair-item";
+      button.textContent = pair[0];
+
+      button.onclick = () => {
+        selectPair(pair);
+        $("dropdown")?.classList.remove("show");
+      };
+
+      box.appendChild(button);
+    });
+
+    if (!filtered.length) {
+      box.textContent = "No matching instruments found.";
+    }
+  }
+
+  function selectPair(pair) {
+    if (!pair) return;
+
+    selectedPair = pair;
+
+    if ($("selectedPair")) {
+      $("selectedPair").textContent = pair[0];
+    }
+
+    loadChart();
+
+    if ($("signal")) $("signal").textContent = "WAIT";
+
+    if ($("message")) {
+      $("message").textContent =
+        "Generate Analysis दबाकर नया विश्लेषण करें।";
+    }
+  }
+
+  function addFavorite() {
+    if (!selectedPair) return;
+
+    const exists = favorites.some(
+      item => item.symbol === selectedPair[1]
+    );
+
+    if (exists) {
+      alert("Already saved in Watchlist.");
+      return;
+    }
+
+    favorites.push({
+      name: selectedPair[0],
+      symbol: selectedPair[1],
+      market: currentMarket
+    });
+
+    saveFavorites();
+    alert("Added to Watchlist!");
+  }
+
+  function renderWatchlist() {
+    const box = $("watchlist");
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    if (!favorites.length) {
+      box.textContent = "No favorite pairs saved.";
+      return;
+    }
+
+    favorites.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "watch-item";
+
+      const open = document.createElement("button");
+      open.textContent = "⭐ " + item.name;
+
+      open.onclick = async () => {
+        if (item.market === "Crypto" &&
+            !allCryptoPairs.length) {
+          await loadCryptoPairs();
+        }
+
+        currentMarket = item.market;
+        updateMarketButtons();
+
+        currentPairs = item.market === "Crypto"
+          ? allCryptoPairs
+          : (markets[item.market] || []);
+
+        selectPair([item.name, item.symbol]);
+      };
+
+      const remove = document.createElement("button");
+      remove.className = "remove";
+      remove.textContent = "✕";
+
+      remove.onclick = () => {
+        favorites.splice(index, 1);
+        saveFavorites();
+      };
+
+      row.appendChild(open);
+      row.appendChild(remove);
+      box.appendChild(row);
+    });
+  }
+
+  function loadChart() {
+    if (!selectedPair || !$("chart")) return;
+
+    const chart = $("chart");
+    const interval = $("timeframe")?.value || "15";
+
+    chart.innerHTML = "";
+
+    const container = document.createElement("div");
+    container.className = "tradingview-widget-container";
+    container.style.height = "100%";
+    container.style.width = "100%";
+
+    const widget = document.createElement("div");
+    widget.className =
+      "tradingview-widget-container__widget";
+    widget.style.height = "100%";
+    widget.style.width = "100%";
+
+    const script = document.createElement("script");
+
+    script.type = "text/javascript";
+    script.async = true;
+    script.src =
+      "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+
+    script.textContent = JSON.stringify({
+      autosize: true,
+      symbol: selectedPair[1],
+      interval,
+      timezone: "Asia/Kolkata",
+      theme: "light",
+      style: "1",
+      locale: "en",
+      allow_symbol_change: true,
+      calendar: false,
+      support_host: "https://www.tradingview.com"
+    });
+
+    container.appendChild(widget);
+    container.appendChild(script);
+    chart.appendChild(container);
+  }
+
+  function formatPrice(value) {
+    if (!Number.isFinite(value)) return "N/A";
+
+    return value.toLocaleString("en-IN", {
+      maximumFractionDigits: 8
+    });
+  }
+
+  async function generateAnalysis() {
+    const signalBox = $("signal");
+    const messageBox = $("message");
+
+    if (!signalBox || !messageBox) return;
+
+    signalBox.textContent = "WAIT";
+    messageBox.textContent = "Analyzing market data...";
+
+    // अभी केवल Crypto के लिए वास्तविक डेटा उपलब्ध है।
+    if (currentMarket !== "Crypto") {
+      messageBox.textContent =
+        "इस Market का अपना live candle data provider अभी जुड़ा नहीं है। इसलिए कोई BUY/SELL signal नहीं दिया जाएगा।";
+
+      return;
+    }
+
+    try {
+      if (!window.TRADE_DATA ||
+          !window.TRADE_ANALYSIS) {
+        throw new Error(
+          "Analysis modules are not loaded."
+        );
+      }
+
+      const selectedInterval =
+        $("timeframe")?.value || "15";
+
+      const timeframe =
+        TIMEFRAME_MAP[selectedInterval];
+
+      if (!timeframe) {
+        throw new Error("Unsupported timeframe.");
+      }
+
+      const candles =
+        await window.TRADE_DATA.getCandles(
+          selectedPair[1],
+          timeframe,
+          200
+        );
+
+      const result =
+        window.TRADE_ANALYSIS.analyze(candles);
+
+      signalBox.textContent = result.signal;
+
+      const reasons = Array.isArray(result.reasons)
+        ? result.reasons.join("\n")
+        : "";
+
+      messageBox.textContent =
+        "Pair: " + selectedPair[0] + "\n" +
+        "Timeframe: " + timeframe + "\n" +
+        "Signal: " + result.signal + "\n" +
+        "Strength: " + result.strength + "%\n" +
+        "Price: " +
+        formatPrice(result.indicators?.price) + "\n" +
+        "Support: " +
+        formatPrice(result.support) + "\n" +
+        "Resistance: " +
+        formatPrice(result.resistance) + "\n\n" +
+        reasons;
+
+    } catch (error) {
+      signalBox.textContent = "WAIT";
+
+      messageBox.textContent =
+        "Analysis नहीं हो पाया: " + error.message;
+    }
+  }
+
+  // Make functions available to HTML buttons.
+  window.changeMarket = changeMarket;
+  window.toggleDropdown = toggleDropdown;
+  window.renderPairs = renderPairs;
+  window.selectPair = selectPair;
+  window.addFavorite = addFavorite;
+  window.renderWatchlist = renderWatchlist;
+  window.loadChart = loadChart;
+  window.generateAnalysis = generateAnalysis;
+
+  function initializeTradePro() {
+    renderWatchlist();
+    changeMarket("Forex");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initializeTradePro
+    );
+  } else {
+    initializeTradePro();
+  }
+
+})();
