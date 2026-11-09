@@ -433,4 +433,4 @@
     initializeTradePro();
   }
 
-})();
+})()
