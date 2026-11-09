@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <meta name="theme-color" content="#ffffff">
 
   <title>TRADE PRO AI</title>
@@ -22,79 +21,36 @@
 
     <!-- MARKET SELECTION -->
     <div class="panel">
-
       <h2>Market Selection</h2>
 
       <div class="market-buttons">
-
-        <button id="btnCrypto"
-          onclick="changeMarket('Crypto')">
-          Crypto
-        </button>
-
-        <button id="btnForex"
-          onclick="changeMarket('Forex')">
-          Forex
-        </button>
-
-        <button id="btnStocks"
-          onclick="changeMarket('Stocks')">
-          Stocks
-        </button>
-
-        <button id="btnGold"
-          onclick="changeMarket('Gold')">
-          Gold
-        </button>
-
-        <button id="btnSilver"
-          onclick="changeMarket('Silver')">
-          Silver
-        </button>
-
-        <button id="btnCommodities"
-          onclick="changeMarket('Commodities')">
-          Commodities
-        </button>
-
+        <button id="btnCrypto" onclick="changeMarket('Crypto')">Crypto</button>
+        <button id="btnForex" onclick="changeMarket('Forex')">Forex</button>
+        <button id="btnStocks" onclick="changeMarket('Stocks')">Stocks</button>
+        <button id="btnGold" onclick="changeMarket('Gold')">Gold</button>
+        <button id="btnSilver" onclick="changeMarket('Silver')">Silver</button>
+        <button id="btnCommodities" onclick="changeMarket('Commodities')">Commodities</button>
       </div>
 
       <!-- PAIR SELECTOR -->
       <div class="selector-row">
-
-        <button id="selectedPair"
-          onclick="toggleDropdown()">
-          EUR/USD
-        </button>
-
-        <button id="openList"
-          onclick="toggleDropdown()">
-          ▼
-        </button>
-
-        <button id="favoriteButton"
-          onclick="addFavorite()">
-          ⭐ Favorite
-        </button>
-
+        <button id="selectedPair" onclick="toggleDropdown()">EUR/USD</button>
+        <button id="openList" onclick="toggleDropdown()">▼</button>
+        <button id="favoriteButton" onclick="addFavorite()">⭐ Favorite</button>
       </div>
 
       <!-- SEARCH DROPDOWN -->
       <div class="dropdown" id="dropdown">
-
         <input
           id="pairSearch"
           placeholder="Search pair or company..."
           oninput="renderPairs()"
         >
-
         <div id="pairList"></div>
-
       </div>
 
       <!-- TIMEFRAME -->
       <select id="timeframe" onchange="loadChart()">
-
         <option value="1">1 Minute</option>
         <option value="5">5 Minutes</option>
         <option value="15" selected>15 Minutes</option>
@@ -103,41 +59,28 @@
         <option value="240">4 Hours</option>
         <option value="D">1 Day</option>
         <option value="W">1 Week</option>
-
       </select>
 
       <p id="status">Ready</p>
-
     </div>
 
     <!-- WATCHLIST -->
     <div class="panel">
-
       <h2>My Watchlist ⭐</h2>
-
-      <div id="watchlist">
-        No favorite pairs saved.
-      </div>
-
+      <div id="watchlist">No favorite pairs saved.</div>
     </div>
 
     <!-- TRADING CHART -->
     <div class="panel">
-
       <h2>Live Trading Chart</h2>
-
       <div id="chart"></div>
-
     </div>
 
     <!-- TECHNICAL ANALYSIS -->
     <div class="panel">
-
       <h2>Technical Analysis</h2>
 
-      <div class="signal" id="signal">
-        WAIT
-      </div>
+      <div class="signal" id="signal">WAIT</div>
 
       <p id="message" style="white-space:pre-line">
         Select a market and generate analysis.
@@ -146,28 +89,23 @@
       <button onclick="generateAnalysis()">
         Generate Analysis
       </button>
-
     </div>
 
   </main>
 
   <footer>
-
     TRADE PRO AI | Professional Market Analysis
-
     <br><br>
-
     Trading involves financial risk.
-
   </footer>
 
-  <!-- JAVASCRIPT MODULES -->
-
-  <!-- MARKET DATA LIST -->
+  <!-- MARKET LIST -->
   <script src="markets.js"></script>
 
-  <!-- INDICATORS -->
+  <!-- BASIC INDICATORS -->
   <script src="indicators.js"></script>
+
+  <!-- ADVANCED INDICATORS -->
   <script src="advanced-indicators.js"></script>
 
   <!-- PROFILES -->
@@ -185,7 +123,7 @@
   <!-- ANALYSIS ENGINE -->
   <script src="analysis.js"></script>
 
-  <!-- MARKET DATA PROVIDER -->
+  <!-- MARKET DATA -->
   <script src="data.js"></script>
 
   <!-- MAIN APPLICATION -->
