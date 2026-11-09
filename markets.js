@@ -1,0 +1,101 @@
+window.TRADE_MARKETS = {
+
+Forex: [
+["EUR/USD","OANDA:EURUSD"],
+["GBP/USD","OANDA:GBPUSD"],
+["USD/JPY","OANDA:USDJPY"],
+["AUD/USD","OANDA:AUDUSD"],
+["USD/CAD","OANDA:USDCAD"],
+["USD/CHF","OANDA:USDCHF"],
+["NZD/USD","OANDA:NZDUSD"],
+["EUR/GBP","OANDA:EURGBP"],
+["EUR/JPY","OANDA:EURJPY"],
+["GBP/JPY","OANDA:GBPJPY"],
+["EUR/AUD","OANDA:EURAUD"],
+["EUR/CAD","OANDA:EURCAD"],
+["EUR/CHF","OANDA:EURCHF"],
+["GBP/AUD","OANDA:GBPAUD"],
+["GBP/CAD","OANDA:GBPCAD"],
+["GBP/CHF","OANDA:GBPCHF"],
+["AUD/JPY","OANDA:AUDJPY"],
+["AUD/CAD","OANDA:AUDCAD"],
+["AUD/CHF","OANDA:AUDCHF"],
+["AUD/NZD","OANDA:AUDNZD"],
+["CAD/JPY","OANDA:CADJPY"],
+["CHF/JPY","OANDA:CHFJPY"],
+["NZD/JPY","OANDA:NZDJPY"],
+["NZD/CAD","OANDA:NZDCAD"],
+["EUR/NZD","OANDA:EURNZD"],
+["GBP/NZD","OANDA:GBPNZD"],
+["USD/SGD","OANDA:USDSGD"],
+["USD/MXN","OANDA:USDMXN"]
+],
+
+Stocks: [
+["Apple","NASDAQ:AAPL"],
+["Microsoft","NASDAQ:MSFT"],
+["NVIDIA","NASDAQ:NVDA"],
+["Amazon","NASDAQ:AMZN"],
+["Google","NASDAQ:GOOGL"],
+["Meta","NASDAQ:META"],
+["Tesla","NASDAQ:TSLA"],
+["Netflix","NASDAQ:NFLX"],
+["AMD","NASDAQ:AMD"],
+["Intel","NASDAQ:INTC"],
+["Coca Cola","NYSE:KO"],
+["Walmart","NYSE:WMT"],
+["JPMorgan","NYSE:JPM"],
+["Visa","NYSE:V"],
+["Reliance Industries","NSE:RELIANCE"],
+["TCS","NSE:TCS"],
+["HDFC Bank","NSE:HDFCBANK"],
+["ICICI Bank","NSE:ICICIBANK"],
+["Infosys","NSE:INFY"],
+["Wipro","NSE:WIPRO"],
+["Tata Motors","NSE:TATAMOTORS"],
+["ITC","NSE:ITC"],
+["State Bank of India","NSE:SBIN"],
+["Bharti Airtel","NSE:BHARTIARTL"],
+["Adani Enterprises","NSE:ADANIENT"],
+["Larsen & Toubro","NSE:LT"],
+["Axis Bank","NSE:AXISBANK"],
+["Kotak Mahindra Bank","NSE:KOTAKBANK"],
+["Hindustan Unilever","NSE:HINDUNILVR"],
+["Maruti Suzuki","NSE:MARUTI"],
+["Tata Steel","NSE:TATASTEEL"],
+["Sun Pharma","NSE:SUNPHARMA"],
+["Bajaj Finance","NSE:BAJFINANCE"],
+["NTPC","NSE:NTPC"],
+["ONGC","NSE:ONGC"],
+["Power Grid","NSE:POWERGRID"],
+["Titan","NSE:TITAN"],
+["Asian Paints","NSE:ASIANPAINT"],
+["UltraTech Cement","NSE:ULTRACEMCO"]
+],
+
+Gold: [
+["Gold / USD","OANDA:XAUUSD"],
+["Gold / EUR","OANDA:XAUEUR"],
+["Gold / GBP","OANDA:XAUGBP"],
+["Gold / JPY","OANDA:XAUJPY"],
+["Gold Futures","COMEX:GC1!"]
+],
+
+Silver: [
+["Silver / USD","OANDA:XAGUSD"],
+["Silver / EUR","OANDA:XAGEUR"],
+["Silver / GBP","OANDA:XAGGBP"],
+["Silver / JPY","OANDA:XAGJPY"],
+["Silver Futures","COMEX:SI1!"]
+],
+
+Commodities: [
+["Crude Oil","TVC:USOIL"],
+["Brent Oil","TVC:UKOIL"],
+["Natural Gas","NYMEX:NG1!"],
+["Copper","COMEX:HG1!"],
+["Platinum","NYMEX:PL1!"],
+["Palladium","NYMEX:PA1!"]
+]
+
+};
