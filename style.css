@@ -1,0 +1,205 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fff;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 18px;
+  border-bottom: 1px solid #ddd;
+  font-size: 25px;
+  font-weight: bold;
+}
+
+header span {
+  color: #1677ff;
+}
+
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 15px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e2e6ed;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 0 0 18px;
+}
+
+button,
+input,
+select {
+  font-size: 15px;
+  border-radius: 9px;
+  padding: 12px;
+  border: 1px solid #ddd;
+}
+
+button {
+  cursor: pointer;
+}
+
+.market-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.market-buttons button {
+  background: #f1f5f9;
+  color: #172033;
+}
+
+.market-buttons button.active {
+  background: #1677ff;
+  color: white;
+}
+
+.selector-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 22px;
+}
+
+#selectedPair {
+  flex: 1;
+  text-align: left;
+  background: #f1f5f9;
+  color: #172033;
+  min-width: 0;
+}
+
+#openList {
+  background: #f1f5f9;
+  color: #172033;
+  font-size: 20px;
+}
+
+#favoriteButton {
+  background: #1677ff;
+  color: white;
+  border: 0;
+  white-space: nowrap;
+}
+
+#timeframe {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.dropdown {
+  display: none;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  background: white;
+}
+
+.dropdown.show {
+  display: block;
+}
+
+#pairSearch {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#pairList {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.pair-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: white;
+  color: #172033;
+  border: 0;
+  border-bottom: 1px solid #eee;
+  border-radius: 0;
+  padding: 13px;
+}
+
+.pair-item:hover {
+  background: #edf4ff;
+}
+
+#status {
+  font-size: 13px;
+  color: #666;
+  margin-top: 12px;
+}
+
+#chart {
+  height: 500px;
+  width: 100%;
+}
+
+.signal {
+  text-align: center;
+  font-size: 35px;
+  font-weight: bold;
+  padding: 20px;
+}
+
+.watch-item {
+  display: flex;
+  gap: 8px;
+  margin: 7px 0;
+}
+
+.watch-item button:first-child {
+  flex: 1;
+  text-align: left;
+  background: #f1f5f9;
+  color: #172033;
+}
+
+.remove {
+  background: #fff0f0;
+  color: #c00;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+}
+
+@media (max-width: 600px) {
+  #chart {
+    height: 400px;
+  }
+
+  header {
+    font-size: 22px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  #favoriteButton {
+    padding: 12px 9px;
+  }
+
+  .market-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
