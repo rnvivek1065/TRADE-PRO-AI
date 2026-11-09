@@ -1,777 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TRADE PRO AI</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-*{box-sizing:border-box}
+  <title>TRADE PRO AI</title>
 
-body{
- margin:0;
- background:#fff;
- color:#172033;
- font-family:Arial,sans-serif;
-}
-
-header{
- padding:18px;
- border-bottom:1px solid #ddd;
- font-size:25px;
- font-weight:bold;
-}
-
-header span{color:#1677ff}
-
-main{
- max-width:1200px;
- margin:auto;
- padding:15px;
-}
-
-.panel{
- background:#fff;
- border:1px solid #e2e6ed;
- border-radius:14px;
- padding:18px;
- margin-bottom:16px;
-}
-
-h2{
- font-size:20px;
- margin:0 0 18px;
-}
-
-button,input,select{
- font-size:15px;
- border-radius:9px;
- padding:12px;
- border:1px solid #ddd;
-}
-
-button{cursor:pointer}
-
-.market-buttons{
- display:grid;
- grid-template-columns:repeat(3,1fr);
- gap:8px;
-}
-
-.market-buttons button{
- background:#f1f5f9;
- color:#172033;
-}
-
-.market-buttons button.active{
- background:#1677ff;
- color:white;
-}
-
-.selector-row{
- display:flex;
- gap:8px;
- align-items:center;
- margin-top:22px;
-}
-
-#selectedPair{
- flex:1;
- text-align:left;
- background:#f1f5f9;
- color:#172033;
- min-width:0;
-}
-
-#openList{
- background:#f1f5f9;
- color:#172033;
- font-size:20px;
-}
-
-#favoriteButton{
- background:#1677ff;
- color:white;
- border:0;
- white-space:nowrap;
-}
-
-#timeframe{
- width:100%;
- margin-top:12px;
-}
-
-.dropdown{
- display:none;
- margin-top:10px;
- border:1px solid #ddd;
- border-radius:12px;
- padding:12px;
- background:white;
-}
-
-.dropdown.show{display:block}
-
-#pairSearch{
- width:100%;
- margin-bottom:10px;
-}
-
-#pairList{
- max-height:260px;
- overflow-y:auto;
-}
-
-.pair-item{
- display:block;
- width:100%;
- text-align:left;
- background:white;
- color:#172033;
- border:0;
- border-bottom:1px solid #eee;
- border-radius:0;
- padding:13px;
-}
-
-.pair-item:hover{background:#edf4ff}
-
-#status{
- font-size:13px;
- color:#666;
- margin-top:12px;
-}
-
-#chart{
- height:500px;
- width:100%;
-}
-
-.signal{
- text-align:center;
- font-size:35px;
- font-weight:bold;
- padding:20px;
-}
-
-.watch-item{
- display:flex;
- gap:8px;
- margin:7px 0;
-}
-
-.watch-item button:first-child{
- flex:1;
- text-align:left;
- background:#f1f5f9;
- color:#172033;
-}
-
-.remove{
- background:#fff0f0;
- color:#c00;
-}
-
-footer{
- text-align:center;
- padding:20px;
- color:#777;
-}
-
-@media(max-width:600px){
- #chart{height:400px}
- header{font-size:22px}
- .panel{padding:14px}
- #favoriteButton{padding:12px 9px}
- .market-buttons{grid-template-columns:repeat(2,1fr)}
-}
-</style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header>TRADE <span>PRO AI</span></header>
+  <header>
+    TRADE <span>PRO AI</span>
+  </header>
 
-<main>
+  <main>
 
-<div class="panel">
+    <!-- MARKET SELECTION -->
+    <div class="panel">
 
-<h2>Market Selection</h2>
+      <h2>Market Selection</h2>
 
-<div class="market-buttons">
+      <div class="market-buttons">
 
-<button id="btnCrypto" onclick="changeMarket('Crypto')">Crypto</button>
+        <button id="btnCrypto"
+          onclick="changeMarket('Crypto')">
+          Crypto
+        </button>
 
-<button id="btnForex" onclick="changeMarket('Forex')">Forex</button>
+        <button id="btnForex"
+          onclick="changeMarket('Forex')">
+          Forex
+        </button>
 
-<button id="btnStocks" onclick="changeMarket('Stocks')">Stocks</button>
+        <button id="btnStocks"
+          onclick="changeMarket('Stocks')">
+          Stocks
+        </button>
 
-<button id="btnGold" onclick="changeMarket('Gold')">Gold</button>
+        <button id="btnGold"
+          onclick="changeMarket('Gold')">
+          Gold
+        </button>
 
-<button id="btnSilver" onclick="changeMarket('Silver')">Silver</button>
+        <button id="btnSilver"
+          onclick="changeMarket('Silver')">
+          Silver
+        </button>
 
-<button id="btnCommodities" onclick="changeMarket('Commodities')">Commodities</button>
+        <button id="btnCommodities"
+          onclick="changeMarket('Commodities')">
+          Commodities
+        </button>
 
-</div>
+      </div>
 
-<div class="selector-row">
+      <!-- PAIR SELECTOR -->
+      <div class="selector-row">
 
-<button id="selectedPair" onclick="toggleDropdown()">EUR/USD</button>
+        <button id="selectedPair"
+          onclick="toggleDropdown()">
+          EUR/USD
+        </button>
 
-<button id="openList" onclick="toggleDropdown()">▼</button>
+        <button id="openList"
+          onclick="toggleDropdown()">
+          ▼
+        </button>
 
-<button id="favoriteButton" onclick="addFavorite()">⭐ Favorite</button>
+        <button id="favoriteButton"
+          onclick="addFavorite()">
+          ⭐ Favorite
+        </button>
 
-</div>
+      </div>
 
-<div class="dropdown" id="dropdown">
+      <!-- SEARCH DROPDOWN -->
+      <div class="dropdown" id="dropdown">
 
-<input
- id="pairSearch"
- placeholder="Search pair or company..."
- oninput="renderPairs()"
->
+        <input
+          id="pairSearch"
+          placeholder="Search pair or company..."
+          oninput="renderPairs()"
+        >
 
-<div id="pairList"></div>
+        <div id="pairList"></div>
 
-</div>
+      </div>
 
-<select id="timeframe" onchange="loadChart()">
+      <!-- TIMEFRAME -->
+      <select id="timeframe" onchange="loadChart()">
 
-<option value="1">1 Minute</option>
-<option value="5">5 Minutes</option>
-<option value="15">15 Minutes</option>
-<option value="30">30 Minutes</option>
-<option value="60">1 Hour</option>
-<option value="240">4 Hours</option>
-<option value="D">1 Day</option>
-<option value="W">1 Week</option>
+        <option value="1">1 Minute</option>
+        <option value="5">5 Minutes</option>
+        <option value="15" selected>15 Minutes</option>
+        <option value="30">30 Minutes</option>
+        <option value="60">1 Hour</option>
+        <option value="240">4 Hours</option>
+        <option value="D">1 Day</option>
+        <option value="W">1 Week</option>
 
-</select>
+      </select>
 
-<p id="status">Ready</p>
+      <p id="status">Ready</p>
 
-</div>
+    </div>
 
-<div class="panel">
+    <!-- WATCHLIST -->
+    <div class="panel">
 
-<h2>My Watchlist ⭐</h2>
+      <h2>My Watchlist ⭐</h2>
 
-<div id="watchlist">No favorite pairs saved.</div>
+      <div id="watchlist">
+        No favorite pairs saved.
+      </div>
 
-</div>
+    </div>
 
-<div class="panel">
+    <!-- TRADING CHART -->
+    <div class="panel">
 
-<h2>Live Trading Chart</h2>
+      <h2>Live Trading Chart</h2>
 
-<div id="chart"></div>
+      <div id="chart"></div>
 
-</div>
+    </div>
 
-<div class="panel">
+    <!-- TECHNICAL ANALYSIS -->
+    <div class="panel">
 
-<h2>Technical Analysis</h2>
+      <h2>Technical Analysis</h2>
 
-<div class="signal" id="signal">WAIT</div>
+      <div class="signal" id="signal">
+        WAIT
+      </div>
 
-<p id="message">
-Technical analysis engine is not connected yet.
-</p>
+      <p id="message" style="white-space:pre-line">
+        Select a market and generate analysis.
+      </p>
 
-<button onclick="generateAnalysis()">Generate Analysis</button>
+      <button onclick="generateAnalysis()">
+        Generate Analysis
+      </button>
 
-</div>
+    </div>
 
-</main>
+  </main>
 
-<footer>
-TRADE PRO AI | Professional Market Analysis
-<br><br>
-Trading involves financial risk.
-</footer>
+  <footer>
 
-<script>
-
-const markets={
-
-Forex:[
-["EUR/USD","OANDA:EURUSD"],
-["GBP/USD","OANDA:GBPUSD"],
-["USD/JPY","OANDA:USDJPY"],
-["AUD/USD","OANDA:AUDUSD"],
-["USD/CAD","OANDA:USDCAD"],
-["USD/CHF","OANDA:USDCHF"],
-["NZD/USD","OANDA:NZDUSD"],
-["EUR/GBP","OANDA:EURGBP"],
-["EUR/JPY","OANDA:EURJPY"],
-["GBP/JPY","OANDA:GBPJPY"],
-["EUR/AUD","OANDA:EURAUD"],
-["EUR/CAD","OANDA:EURCAD"],
-["EUR/CHF","OANDA:EURCHF"],
-["GBP/AUD","OANDA:GBPAUD"],
-["GBP/CAD","OANDA:GBPCAD"],
-["GBP/CHF","OANDA:GBPCHF"],
-["AUD/JPY","OANDA:AUDJPY"],
-["AUD/CAD","OANDA:AUDCAD"],
-["AUD/CHF","OANDA:AUDCHF"],
-["AUD/NZD","OANDA:AUDNZD"],
-["CAD/JPY","OANDA:CADJPY"],
-["CHF/JPY","OANDA:CHFJPY"],
-["NZD/JPY","OANDA:NZDJPY"],
-["NZD/CAD","OANDA:NZDCAD"],
-["EUR/NZD","OANDA:EURNZD"],
-["GBP/NZD","OANDA:GBPNZD"],
-["USD/SGD","OANDA:USDSGD"],
-["USD/MXN","OANDA:USDMXN"]
-],
-
-Stocks:[
-
-["Apple","NASDAQ:AAPL"],
-["Microsoft","NASDAQ:MSFT"],
-["NVIDIA","NASDAQ:NVDA"],
-["Amazon","NASDAQ:AMZN"],
-["Google","NASDAQ:GOOGL"],
-["Meta","NASDAQ:META"],
-["Tesla","NASDAQ:TSLA"],
-["Netflix","NASDAQ:NFLX"],
-["AMD","NASDAQ:AMD"],
-["Intel","NASDAQ:INTC"],
-["Coca Cola","NYSE:KO"],
-["Walmart","NYSE:WMT"],
-["JPMorgan","NYSE:JPM"],
-["Visa","NYSE:V"],
-
-["Reliance Industries","NSE:RELIANCE"],
-["TCS","NSE:TCS"],
-["HDFC Bank","NSE:HDFCBANK"],
-["ICICI Bank","NSE:ICICIBANK"],
-["Infosys","NSE:INFY"],
-["Wipro","NSE:WIPRO"],
-["Tata Motors","NSE:TATAMOTORS"],
-["ITC","NSE:ITC"],
-["State Bank of India","NSE:SBIN"],
-["Bharti Airtel","NSE:BHARTIARTL"],
-["Adani Enterprises","NSE:ADANIENT"],
-["Larsen & Toubro","NSE:LT"],
-["Axis Bank","NSE:AXISBANK"],
-["Kotak Mahindra Bank","NSE:KOTAKBANK"],
-["Hindustan Unilever","NSE:HINDUNILVR"],
-["Maruti Suzuki","NSE:MARUTI"],
-["Tata Steel","NSE:TATASTEEL"],
-["Sun Pharma","NSE:SUNPHARMA"],
-["Bajaj Finance","NSE:BAJFINANCE"],
-["NTPC","NSE:NTPC"],
-["ONGC","NSE:ONGC"],
-["Power Grid","NSE:POWERGRID"],
-["Titan","NSE:TITAN"],
-["Asian Paints","NSE:ASIANPAINT"],
-["UltraTech Cement","NSE:ULTRACEMCO"]
-
-],
-
-Gold:[
-
-["Gold / USD","OANDA:XAUUSD"],
-["Gold / EUR","OANDA:XAUEUR"],
-["Gold / GBP","OANDA:XAUGBP"],
-["Gold / JPY","OANDA:XAUJPY"],
-["Gold Futures","COMEX:GC1!"]
-
-],
-
-Silver:[
-
-["Silver / USD","OANDA:XAGUSD"],
-["Silver / EUR","OANDA:XAGEUR"],
-["Silver / GBP","OANDA:XAGGBP"],
-["Silver / JPY","OANDA:XAGJPY"],
-["Silver Futures","COMEX:SI1!"]
-
-],
-
-Commodities:[
-
-["Crude Oil","TVC:USOIL"],
-["Brent Oil","TVC:UKOIL"],
-["Natural Gas","NYMEX:NG1!"],
-["Copper","COMEX:HG1!"],
-["Platinum","NYMEX:PL1!"],
-["Palladium","NYMEX:PA1!"]
-
-]
-
-};
-
-let currentMarket="Forex";
-let currentPairs=markets.Forex;
-let allCryptoPairs=[];
-let selectedPair=markets.Forex[0];
-
-let favorites=[];
-
-try{
- favorites=JSON.parse(
- localStorage.getItem("tradeFavorites")||"[]"
- );
-}catch(e){
- favorites=[];
-}
-
-function saveFavorites(){
-
- localStorage.setItem(
- "tradeFavorites",
- JSON.stringify(favorites)
- );
-
- renderWatchlist();
-
-}
-
-function updateMarketButtons(){
-
- ["Crypto","Forex","Stocks","Gold","Silver","Commodities"]
- .forEach(market=>{
-
-  document.getElementById("btn"+market)
-  .classList.toggle(
-   "active",
-   currentMarket===market
-  );
-
- });
+    TRADE PRO AI | Professional Market Analysis
 
-}
+    <br><br>
 
-function changeMarket(market){
+    Trading involves financial risk.
 
- currentMarket=market;
- updateMarketButtons();
+  </footer>
 
- document.getElementById("pairSearch").value="";
- document.getElementById("dropdown").classList.remove("show");
+  <!-- JAVASCRIPT MODULES -->
+  <!-- Load order is important -->
 
- if(market==="Crypto"){
+  <script src="markets.js"></script>
 
-  if(allCryptoPairs.length){
+  <script src="indicators.js"></script>
 
-   currentPairs=allCryptoPairs;
-   selectPair(allCryptoPairs[0]);
+  <script src="advanced-indicators.js"></script>
 
-   document.getElementById("status").innerText=
-   allCryptoPairs.length+" Binance USDT Spot pairs loaded";
+  <script src="profiles.js"></script>
 
-  }else{
+  <script src="patterns.js"></script>
 
-   loadCryptoPairs();
+  <script src="analysis.js"></script>
 
-  }
+  <script src="data.js"></script>
 
- }else{
-
-  currentPairs=markets[market];
-
-  document.getElementById("status").innerText=
-  currentPairs.length+" listed instruments";
-
-  selectPair(currentPairs[0]);
-
- }
-
-}
-
-async function loadCryptoPairs(){
-
- document.getElementById("status").innerText=
- "Loading Binance USDT Spot pairs...";
-
- try{
-
-  const response=await fetch(
-   "https://api.binance.com/api/v3/exchangeInfo"
-  );
-
-  if(!response.ok)throw new Error("API error");
-
-  const data=await response.json();
-
-  allCryptoPairs=data.symbols
-  .filter(s=>
-   s.quoteAsset==="USDT" &&
-   s.status==="TRADING" &&
-   s.isSpotTradingAllowed
-  )
-  .map(s=>[
-   s.baseAsset+"/USDT",
-   "BINANCE:"+s.symbol
-  ])
-  .sort((a,b)=>a[0].localeCompare(b[0]));
-
-  currentPairs=allCryptoPairs;
-
-  document.getElementById("status").innerText=
-  allCryptoPairs.length+" Binance USDT Spot pairs loaded";
-
-  if(allCryptoPairs.length){
-   selectPair(allCryptoPairs[0]);
-  }
-
- }catch(error){
-
-  allCryptoPairs=[
-   ["BTC/USDT","BINANCE:BTCUSDT"],
-   ["ETH/USDT","BINANCE:ETHUSDT"],
-   ["BNB/USDT","BINANCE:BNBUSDT"],
-   ["SOL/USDT","BINANCE:SOLUSDT"],
-   ["XRP/USDT","BINANCE:XRPUSDT"],
-   ["DOGE/USDT","BINANCE:DOGEUSDT"],
-   ["ADA/USDT","BINANCE:ADAUSDT"]
-  ];
-
-  currentPairs=allCryptoPairs;
-
-  document.getElementById("status").innerText=
-  "Binance unavailable. Backup pairs shown.";
-
-  selectPair(allCryptoPairs[0]);
-
- }
-
-}
-
-function toggleDropdown(){
-
- const dropdown=document.getElementById("dropdown");
-
- dropdown.classList.toggle("show");
-
- if(dropdown.classList.contains("show")){
-
-  document.getElementById("pairSearch").focus();
-
-  renderPairs();
-
- }
-
-}
-
-function renderPairs(){
-
- const query=document.getElementById("pairSearch")
- .value.toUpperCase();
-
- const box=document.getElementById("pairList");
-
- box.innerHTML="";
-
- const filtered=currentPairs.filter(pair=>
-  pair[0].toUpperCase().includes(query)||
-  pair[1].toUpperCase().includes(query)
- );
-
- filtered.forEach(pair=>{
-
-  const button=document.createElement("button");
-
-  button.className="pair-item";
-  button.textContent=pair[0];
-
-  button.onclick=()=>{
-
-   selectPair(pair);
-
-   document.getElementById("dropdown")
-   .classList.remove("show");
-
-  };
-
-  box.appendChild(button);
-
- });
-
- if(filtered.length===0){
-  box.innerText="No matching instruments found.";
- }
-
-}
-
-function selectPair(pair){
-
- if(!pair)return;
-
- selectedPair=pair;
-
- document.getElementById("selectedPair")
- .textContent=pair[0];
-
- loadChart();
-
-}
-
-function addFavorite(){
-
- if(!selectedPair)return;
-
- const exists=favorites.some(
-  item=>item.symbol===selectedPair[1]
- );
-
- if(exists){
-
-  alert("Already saved in Watchlist.");
-  return;
-
- }
-
- favorites.push({
-
-  name:selectedPair[0],
-  symbol:selectedPair[1],
-  market:currentMarket
-
- });
-
- saveFavorites();
-
- alert("Added to Watchlist!");
-
-}
-
-function renderWatchlist(){
-
- const box=document.getElementById("watchlist");
-
- box.innerHTML="";
-
- if(favorites.length===0){
-
-  box.textContent="No favorite pairs saved.";
-  return;
-
- }
-
- favorites.forEach((item,index)=>{
-
-  const row=document.createElement("div");
-  row.className="watch-item";
-
-  const open=document.createElement("button");
-
-  open.textContent="⭐ "+item.name;
-
-  open.onclick=()=>{
-
-   currentMarket=item.market;
-
-   updateMarketButtons();
-
-   if(item.market==="Crypto"){
-
-    if(allCryptoPairs.length){
-     currentPairs=allCryptoPairs;
-    }else{
-     currentPairs=markets.Forex;
-    }
-
-   }else{
-
-    currentPairs=markets[item.market]||[];
-
-   }
-
-   selectPair([item.name,item.symbol]);
-
-  };
-
-  const remove=document.createElement("button");
-
-  remove.className="remove";
-  remove.textContent="✕";
-
-  remove.onclick=()=>{
-
-   favorites.splice(index,1);
-   saveFavorites();
-
-  };
-
-  row.appendChild(open);
-  row.appendChild(remove);
-
-  box.appendChild(row);
-
- });
-
-}
-
-function loadChart(){
-
- if(!selectedPair)return;
-
- const chart=document.getElementById("chart");
-
- const interval=document.getElementById("timeframe").value;
-
- chart.innerHTML="";
-
- const container=document.createElement("div");
-
- container.className="tradingview-widget-container";
- container.style.height="100%";
- container.style.width="100%";
-
- const widget=document.createElement("div");
-
- widget.className="tradingview-widget-container__widget";
- widget.style.height="100%";
- widget.style.width="100%";
-
- const script=document.createElement("script");
-
- script.type="text/javascript";
- script.async=true;
-
- script.src=
- "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-
- script.textContent=JSON.stringify({
-
-  autosize:true,
-  symbol:selectedPair[1],
-  interval:interval,
-  timezone:"Asia/Kolkata",
-  theme:"light",
-  style:"1",
-  locale:"en",
-  allow_symbol_change:true,
-  calendar:false,
-  support_host:"https://www.tradingview.com"
-
- });
-
- container.appendChild(widget);
- container.appendChild(script);
-
- chart.appendChild(container);
-
-}
-
-function generateAnalysis(){
-
- document.getElementById("signal").innerText="WAIT";
-
- document.getElementById("message").innerText=
- "Technical analysis engine is not connected yet. No live signal generated.";
-
-}
-
-renderWatchlist();
-
-changeMarket("Forex");
-
-</script>
+  <script src="script.js"></script>
 
 </body>
 </html>
