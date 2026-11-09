@@ -1,156 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRADE PRO AI</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRADE PRO AI</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7fa;
-      color: #172033;
-    }
-
-    header {
-      background: #ffffff;
-      padding: 20px;
-      border-bottom: 1px solid #ddd;
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    header span {
-      color: #1677ff;
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 25px auto;
-      padding: 15px;
-    }
-
-    .panel {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 10px #00000008;
-    }
-
-    select, button {
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin: 5px;
-      font-size: 15px;
-    }
-
-    button {
-      background: #1677ff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .chart {
-      height: 350px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #777;
-      background: white;
-    }
-
-    .signal {
-      text-align: center;
-      font-size: 30px;
-      font-weight: bold;
-      padding: 25px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      color: #777;
-    }
-  </style>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#fff;
+ color:#172033;
+ font-family:Arial,sans-serif
+}
+header{
+ padding:18px;
+ border-bottom:1px solid #ddd;
+ font-size:25px;
+ font-weight:bold
+}
+header span{color:#1677ff}
+main{max-width:1200px;margin:auto;padding:15px}
+.panel{
+ background:white;
+ border:1px solid #e2e6ed;
+ border-radius:12px;
+ padding:16px;
+ margin-bottom:16px
+}
+h2{font-size:19px;margin-top:0}
+select,input,button{
+ padding:12px;
+ border:1px solid #ddd;
+ border-radius:8px;
+ background:white;
+ font-size:14px;
+ margin:4px;
+ max-width:100%
+}
+button{
+ background:#1677ff;
+ color:white;
+ border:0;
+ font-weight:bold
+}
+.market-buttons{
+ display:flex;
+ flex-wrap:wrap;
+ gap:7px
+}
+.market-buttons button{flex:1}
+#chart{
+ width:100%;
+ height:500px
+}
+.signal{
+ text-align:center;
+ font-size:35px;
+ font-weight:bold;
+ padding:20px
+}
+footer{text-align:center;padding:20px;color:#777}
+@media(max-width:600px){
+ #chart{height:400px}
+ header{font-size:22px}
+}
+</style>
 </head>
 
 <body>
 
 <header>
-  TRADE <span>PRO AI</span>
+ TRADE <span>PRO AI</span>
 </header>
 
 <main>
 
-  <div class="panel">
-    <h2>Market Analysis</h2>
+<div class="panel">
+<h2>Market Selection</h2>
 
-    <select id="market">
-      <option>Forex</option>
-      <option>Crypto</option>
-      <option>Stocks</option>
-      <option>Gold</option>
-    </select>
+<div class="market-buttons">
+<button onclick="changeMarket('Forex')">Forex</button>
+<button onclick="changeMarket('Crypto')">Crypto</button>
+<button onclick="changeMarket('Stocks')">Stocks</button>
+<button onclick="changeMarket('Gold')">Gold</button>
+</div>
 
-    <select id="timeframe">
-      <option>1 Minute</option>
-      <option>5 Minutes</option>
-      <option>15 Minutes</option>
-      <option>30 Minutes</option>
-      <option>1 Hour</option>
-      <option>4 Hours</option>
-      <option>1 Day</option>
-      <option>1 Week</option>
-    </select>
-  </div>
+<br>
 
-  <div class="panel">
-    <h2>Trading Chart</h2>
-    <div class="chart">
-      Chart will appear here after data connection.
-    </div>
-  </div>
+<select id="symbol" onchange="loadChart()">
+<option value="OANDA:EURUSD">EUR/USD</option>
+<option value="OANDA:GBPUSD">GBP/USD</option>
+<option value="OANDA:USDJPY">USD/JPY</option>
+</select>
 
-  <div class="panel">
-    <h2>AI Trading Analysis</h2>
+<select id="timeframe" onchange="loadChart()">
+<option value="1">1 Minute</option>
+<option value="5">5 Minutes</option>
+<option value="15">15 Minutes</option>
+<option value="30">30 Minutes</option>
+<option value="60">1 Hour</option>
+<option value="240">4 Hours</option>
+<option value="D">1 Day</option>
+<option value="W">1 Week</option>
+</select>
+</div>
 
-    <div class="signal" id="signal">
-      WAIT
-    </div>
+<div class="panel">
+<h2>Live Trading Chart</h2>
+<div id="chart"></div>
+</div>
 
-    <button onclick="showMessage()">
-      Generate Analysis
-    </button>
+<div class="panel">
+<h2>Technical Analysis</h2>
 
-    <p id="message">
-      Connect a market data source to begin analysis.
-    </p>
-  </div>
+<div class="signal" id="signal">WAIT</div>
+
+<p id="message">
+Market data and analysis engine are not connected yet.
+</p>
+
+<button onclick="generateAnalysis()">
+Generate Analysis
+</button>
+</div>
 
 </main>
 
 <footer>
-  TRADE PRO AI | Market Analysis Platform
-  <br>
-  Trading involves risk. No guaranteed profits.
+TRADE PRO AI | Professional Market Analysis
+<br><br>
+Trading involves financial risk.
 </footer>
 
 <script>
-  function showMessage() {
-    document.getElementById("signal").innerText = "WAIT";
-    document.getElementById("message").innerText =
-      "Live market data is not connected yet.";
-  }
+const markets={
+ Forex:[
+  ["EUR/USD","OANDA:EURUSD"],
+  ["GBP/USD","OANDA:GBPUSD"],
+  ["USD/JPY","OANDA:USDJPY"],
+  ["AUD/USD","OANDA:AUDUSD"]
+ ],
+ Crypto:[
+  ["BTC/USDT","BINANCE:BTCUSDT"],
+  ["ETH/USDT","BINANCE:ETHUSDT"],
+  ["SOL/USDT","BINANCE:SOLUSDT"],
+  ["BNB/USDT","BINANCE:BNBUSDT"]
+ ],
+ Stocks:[
+  ["Apple","NASDAQ:AAPL"],
+  ["Microsoft","NASDAQ:MSFT"],
+  ["Tesla","NASDAQ:TSLA"],
+  ["NVIDIA","NASDAQ:NVDA"]
+ ],
+ Gold:[
+  ["Gold / USD","OANDA:XAUUSD"]
+ ]
+};
+
+function changeMarket(market){
+ const select=document.getElementById("symbol");
+ select.innerHTML="";
+ markets[market].forEach(item=>{
+  const option=document.createElement("option");
+  option.textContent=item[0];
+  option.value=item[1];
+  select.appendChild(option);
+ });
+ loadChart();
+}
+
+function loadChart(){
+ const symbol=document.getElementById("symbol").value;
+ const interval=document.getElementById("timeframe").value;
+
+ document.getElementById("chart").innerHTML="";
+
+ const script=document.createElement("script");
+ script.src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+ script.async=true;
+
+ script.innerHTML=JSON.stringify({
+  autosize:true,
+  symbol:symbol,
+  interval:interval,
+  timezone:"Asia/Kolkata",
+  theme:"light",
+  style:"1",
+  locale:"en",
+  allow_symbol_change:true,
+  calendar:false,
+  support_host:"https://www.tradingview.com"
+ });
+
+ document.getElementById("chart").appendChild(script);
+}
+
+function generateAnalysis(){
+ document.getElementById("signal").innerText="WAIT";
+ document.getElementById("message").innerText=
+ "Technical analysis engine is not connected yet. No live signal generated.";
+}
+
+loadChart();
 </script>
 
 </body>
