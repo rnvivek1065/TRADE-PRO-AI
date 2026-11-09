@@ -7,99 +7,183 @@
 
 <style>
 *{box-sizing:border-box}
+
 body{
- margin:0;background:#fff;color:#172033;
- font-family:Arial,sans-serif
+ margin:0;
+ background:#fff;
+ color:#172033;
+ font-family:Arial,sans-serif;
 }
+
 header{
- padding:18px;border-bottom:1px solid #ddd;
- font-size:25px;font-weight:bold
+ padding:18px;
+ border-bottom:1px solid #ddd;
+ font-size:25px;
+ font-weight:bold;
 }
+
 header span{color:#1677ff}
-main{max-width:1200px;margin:auto;padding:15px}
+
+main{
+ max-width:1200px;
+ margin:auto;
+ padding:15px;
+}
+
 .panel{
- background:#fff;border:1px solid #e2e6ed;
- border-radius:14px;padding:18px;margin-bottom:16px
+ background:#fff;
+ border:1px solid #e2e6ed;
+ border-radius:14px;
+ padding:18px;
+ margin-bottom:16px;
 }
-h2{font-size:20px;margin:0 0 18px}
+
+h2{
+ font-size:20px;
+ margin:0 0 18px;
+}
+
 button,input,select{
- font-size:15px;border-radius:9px;
- padding:12px;border:1px solid #ddd
+ font-size:15px;
+ border-radius:9px;
+ padding:12px;
+ border:1px solid #ddd;
 }
+
 button{cursor:pointer}
+
 .market-buttons{
- display:flex;flex-wrap:wrap;gap:8px
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:8px;
 }
+
 .market-buttons button{
- flex:1;background:#f1f5f9;color:#172033;
- min-width:85px
+ background:#f1f5f9;
+ color:#172033;
 }
+
 .market-buttons button.active{
- background:#1677ff;color:white
+ background:#1677ff;
+ color:white;
 }
+
 .selector-row{
- display:flex;gap:8px;align-items:center;
- margin-top:22px
+ display:flex;
+ gap:8px;
+ align-items:center;
+ margin-top:22px;
 }
+
 #selectedPair{
- flex:1;text-align:left;background:#f1f5f9;
- color:#172033;border:1px solid #ddd;
- min-width:0
+ flex:1;
+ text-align:left;
+ background:#f1f5f9;
+ color:#172033;
+ min-width:0;
 }
+
 #openList{
- background:#f1f5f9;color:#172033;
- border:1px solid #ddd;font-size:20px
+ background:#f1f5f9;
+ color:#172033;
+ font-size:20px;
 }
+
 #favoriteButton{
- background:#1677ff;color:white;
- border:0;white-space:nowrap
+ background:#1677ff;
+ color:white;
+ border:0;
+ white-space:nowrap;
 }
+
 #timeframe{
- width:100%;margin-top:12px
+ width:100%;
+ margin-top:12px;
 }
+
 .dropdown{
- display:none;margin-top:10px;
- border:1px solid #ddd;border-radius:12px;
- padding:12px;background:white
+ display:none;
+ margin-top:10px;
+ border:1px solid #ddd;
+ border-radius:12px;
+ padding:12px;
+ background:white;
 }
+
 .dropdown.show{display:block}
+
 #pairSearch{
- width:100%;margin-bottom:10px
+ width:100%;
+ margin-bottom:10px;
 }
+
 #pairList{
- max-height:260px;overflow-y:auto
+ max-height:260px;
+ overflow-y:auto;
 }
+
 .pair-item{
- display:block;width:100%;text-align:left;
- background:white;color:#172033;
- border:0;border-bottom:1px solid #eee;
- border-radius:0;padding:13px
+ display:block;
+ width:100%;
+ text-align:left;
+ background:white;
+ color:#172033;
+ border:0;
+ border-bottom:1px solid #eee;
+ border-radius:0;
+ padding:13px;
 }
-.pair-item:active,.pair-item:hover{
- background:#edf4ff
+
+.pair-item:hover{background:#edf4ff}
+
+#status{
+ font-size:13px;
+ color:#666;
+ margin-top:12px;
 }
-#status{font-size:13px;color:#666;margin-top:12px}
-#chart{height:500px;width:100%}
+
+#chart{
+ height:500px;
+ width:100%;
+}
+
 .signal{
- text-align:center;font-size:35px;
- font-weight:bold;padding:20px
+ text-align:center;
+ font-size:35px;
+ font-weight:bold;
+ padding:20px;
 }
+
 .watch-item{
- display:flex;gap:8px;margin:7px 0
+ display:flex;
+ gap:8px;
+ margin:7px 0;
 }
+
 .watch-item button:first-child{
- flex:1;text-align:left;background:#f1f5f9;
- color:#172033;border:1px solid #ddd
+ flex:1;
+ text-align:left;
+ background:#f1f5f9;
+ color:#172033;
 }
+
 .remove{
- background:#fff0f0;color:#c00;border:1px solid #ddd
+ background:#fff0f0;
+ color:#c00;
 }
-footer{text-align:center;padding:20px;color:#777}
+
+footer{
+ text-align:center;
+ padding:20px;
+ color:#777;
+}
+
 @media(max-width:600px){
  #chart{height:400px}
  header{font-size:22px}
  .panel{padding:14px}
  #favoriteButton{padding:12px 9px}
+ .market-buttons{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
@@ -115,24 +199,28 @@ footer{text-align:center;padding:20px;color:#777}
 <h2>Market Selection</h2>
 
 <div class="market-buttons">
+
 <button id="btnCrypto" onclick="changeMarket('Crypto')">Crypto</button>
+
 <button id="btnForex" onclick="changeMarket('Forex')">Forex</button>
+
 <button id="btnStocks" onclick="changeMarket('Stocks')">Stocks</button>
+
 <button id="btnGold" onclick="changeMarket('Gold')">Gold</button>
+
+<button id="btnSilver" onclick="changeMarket('Silver')">Silver</button>
+
 <button id="btnCommodities" onclick="changeMarket('Commodities')">Commodities</button>
+
 </div>
 
 <div class="selector-row">
 
-<button id="selectedPair" onclick="toggleDropdown()">
-EUR/USD
-</button>
+<button id="selectedPair" onclick="toggleDropdown()">EUR/USD</button>
 
 <button id="openList" onclick="toggleDropdown()">▼</button>
 
-<button id="favoriteButton" onclick="addFavorite()">
-⭐ Favorite
-</button>
+<button id="favoriteButton" onclick="addFavorite()">⭐ Favorite</button>
 
 </div>
 
@@ -149,6 +237,7 @@ EUR/USD
 </div>
 
 <select id="timeframe" onchange="loadChart()">
+
 <option value="1">1 Minute</option>
 <option value="5">5 Minutes</option>
 <option value="15">15 Minutes</option>
@@ -157,6 +246,7 @@ EUR/USD
 <option value="240">4 Hours</option>
 <option value="D">1 Day</option>
 <option value="W">1 Week</option>
+
 </select>
 
 <p id="status">Ready</p>
@@ -167,15 +257,14 @@ EUR/USD
 
 <h2>My Watchlist ⭐</h2>
 
-<div id="watchlist">
-No favorite pairs saved.
-</div>
+<div id="watchlist">No favorite pairs saved.</div>
 
 </div>
 
 <div class="panel">
 
 <h2>Live Trading Chart</h2>
+
 <div id="chart"></div>
 
 </div>
@@ -190,9 +279,7 @@ No favorite pairs saved.
 Technical analysis engine is not connected yet.
 </p>
 
-<button onclick="generateAnalysis()">
-Generate Analysis
-</button>
+<button onclick="generateAnalysis()">Generate Analysis</button>
 
 </div>
 
@@ -255,7 +342,6 @@ Stocks:[
 ["Walmart","NYSE:WMT"],
 ["JPMorgan","NYSE:JPM"],
 ["Visa","NYSE:V"],
-["Berkshire Hathaway","NYSE:BRK.B"],
 
 ["Reliance Industries","NSE:RELIANCE"],
 ["TCS","NSE:TCS"],
@@ -282,24 +368,38 @@ Stocks:[
 ["Titan","NSE:TITAN"],
 ["Asian Paints","NSE:ASIANPAINT"],
 ["UltraTech Cement","NSE:ULTRACEMCO"]
+
 ],
 
 Gold:[
+
 ["Gold / USD","OANDA:XAUUSD"],
 ["Gold / EUR","OANDA:XAUEUR"],
 ["Gold / GBP","OANDA:XAUGBP"],
 ["Gold / JPY","OANDA:XAUJPY"],
 ["Gold Futures","COMEX:GC1!"]
+
+],
+
+Silver:[
+
+["Silver / USD","OANDA:XAGUSD"],
+["Silver / EUR","OANDA:XAGEUR"],
+["Silver / GBP","OANDA:XAGGBP"],
+["Silver / JPY","OANDA:XAGJPY"],
+["Silver Futures","COMEX:SI1!"]
+
 ],
 
 Commodities:[
-["Silver / USD","OANDA:XAGUSD"],
+
 ["Crude Oil","TVC:USOIL"],
 ["Brent Oil","TVC:UKOIL"],
 ["Natural Gas","NYMEX:NG1!"],
 ["Copper","COMEX:HG1!"],
 ["Platinum","NYMEX:PL1!"],
 ["Palladium","NYMEX:PA1!"]
+
 ]
 
 };
@@ -320,22 +420,23 @@ try{
 }
 
 function saveFavorites(){
+
  localStorage.setItem(
  "tradeFavorites",
  JSON.stringify(favorites)
  );
+
  renderWatchlist();
+
 }
 
 function updateMarketButtons(){
 
- ["Crypto","Forex","Stocks","Gold","Commodities"]
+ ["Crypto","Forex","Stocks","Gold","Silver","Commodities"]
  .forEach(market=>{
 
-  const id="btn"+market;
-  const button=document.getElementById(id);
-
-  button.classList.toggle(
+  document.getElementById("btn"+market)
+  .classList.toggle(
    "active",
    currentMarket===market
   );
@@ -355,19 +456,25 @@ function changeMarket(market){
  if(market==="Crypto"){
 
   if(allCryptoPairs.length){
+
    currentPairs=allCryptoPairs;
    selectPair(allCryptoPairs[0]);
+
    document.getElementById("status").innerText=
    allCryptoPairs.length+" Binance USDT Spot pairs loaded";
+
   }else{
+
    loadCryptoPairs();
+
   }
 
  }else{
 
   currentPairs=markets[market];
+
   document.getElementById("status").innerText=
-   currentPairs.length+" listed instruments";
+  currentPairs.length+" listed instruments";
 
   selectPair(currentPairs[0]);
 
@@ -405,7 +512,7 @@ async function loadCryptoPairs(){
   currentPairs=allCryptoPairs;
 
   document.getElementById("status").innerText=
-   allCryptoPairs.length+" Binance USDT Spot pairs loaded";
+  allCryptoPairs.length+" Binance USDT Spot pairs loaded";
 
   if(allCryptoPairs.length){
    selectPair(allCryptoPairs[0]);
@@ -426,7 +533,7 @@ async function loadCryptoPairs(){
   currentPairs=allCryptoPairs;
 
   document.getElementById("status").innerText=
-   "Binance unavailable. Backup pairs shown.";
+  "Binance unavailable. Backup pairs shown.";
 
   selectPair(allCryptoPairs[0]);
 
@@ -441,8 +548,11 @@ function toggleDropdown(){
  dropdown.classList.toggle("show");
 
  if(dropdown.classList.contains("show")){
+
   document.getElementById("pairSearch").focus();
+
   renderPairs();
+
  }
 
 }
@@ -482,7 +592,7 @@ function renderPairs(){
  });
 
  if(filtered.length===0){
-  box.innerText="No matching pairs found.";
+  box.innerText="No matching instruments found.";
  }
 
 }
@@ -509,14 +619,18 @@ function addFavorite(){
  );
 
  if(exists){
+
   alert("Already saved in Watchlist.");
   return;
+
  }
 
  favorites.push({
+
   name:selectedPair[0],
   symbol:selectedPair[1],
   market:currentMarket
+
  });
 
  saveFavorites();
@@ -532,8 +646,10 @@ function renderWatchlist(){
  box.innerHTML="";
 
  if(favorites.length===0){
+
   box.textContent="No favorite pairs saved.";
   return;
+
  }
 
  favorites.forEach((item,index)=>{
@@ -542,18 +658,27 @@ function renderWatchlist(){
   row.className="watch-item";
 
   const open=document.createElement("button");
+
   open.textContent="⭐ "+item.name;
 
   open.onclick=()=>{
 
    currentMarket=item.market;
+
    updateMarketButtons();
 
    if(item.market==="Crypto"){
-    currentPairs=allCryptoPairs.length?
-     allCryptoPairs:markets.Forex;
+
+    if(allCryptoPairs.length){
+     currentPairs=allCryptoPairs;
+    }else{
+     currentPairs=markets.Forex;
+    }
+
    }else{
+
     currentPairs=markets[item.market]||[];
+
    }
 
    selectPair([item.name,item.symbol]);
@@ -561,6 +686,7 @@ function renderWatchlist(){
   };
 
   const remove=document.createElement("button");
+
   remove.className="remove";
   remove.textContent="✕";
 
@@ -585,16 +711,19 @@ function loadChart(){
  if(!selectedPair)return;
 
  const chart=document.getElementById("chart");
+
  const interval=document.getElementById("timeframe").value;
 
  chart.innerHTML="";
 
  const container=document.createElement("div");
+
  container.className="tradingview-widget-container";
  container.style.height="100%";
  container.style.width="100%";
 
  const widget=document.createElement("div");
+
  widget.className="tradingview-widget-container__widget";
  widget.style.height="100%";
  widget.style.width="100%";
@@ -639,6 +768,7 @@ function generateAnalysis(){
 }
 
 renderWatchlist();
+
 changeMarket("Forex");
 
 </script>
