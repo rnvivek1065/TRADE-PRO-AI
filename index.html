@@ -1,133 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
+<!DOCTYPE html><html lang="en"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#ffffff">
-
-  <title>TRADE PRO AI</title>
-
-  <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-  <header>
+  <meta name="theme-color" content="#ffffff">  <title>TRADE PRO AI</title>  <link rel="stylesheet" href="style.css">
+</head><body>  <header>
     TRADE <span>PRO AI</span>
-  </header>
+  </header>  <main><!-- MARKET SELECTION -->
+<div class="panel">
+  <h2>Market Selection</h2>
 
-  <main>
+  <div class="market-buttons">
+    <button id="btnCrypto" onclick="changeMarket('Crypto')">Crypto</button>
+    <button id="btnForex" onclick="changeMarket('Forex')">Forex</button>
+    <button id="btnStocks" onclick="changeMarket('Stocks')">Stocks</button>
+    <button id="btnGold" onclick="changeMarket('Gold')">Gold</button>
+    <button id="btnSilver" onclick="changeMarket('Silver')">Silver</button>
+    <button id="btnCommodities" onclick="changeMarket('Commodities')">Commodities</button>
+  </div>
 
-    <!-- MARKET SELECTION -->
-    <div class="panel">
-      <h2>Market Selection</h2>
+  <!-- PAIR SELECTOR -->
+  <div class="selector-row">
+    <button id="selectedPair" onclick="toggleDropdown()">EUR/USD</button>
+    <button id="openList" onclick="toggleDropdown()">▼</button>
+    <button id="favoriteButton" onclick="addFavorite()">⭐ Favorite</button>
+  </div>
 
-      <div class="market-buttons">
-        <button id="btnCrypto" onclick="changeMarket('Crypto')">Crypto</button>
-        <button id="btnForex" onclick="changeMarket('Forex')">Forex</button>
-        <button id="btnStocks" onclick="changeMarket('Stocks')">Stocks</button>
-        <button id="btnGold" onclick="changeMarket('Gold')">Gold</button>
-        <button id="btnSilver" onclick="changeMarket('Silver')">Silver</button>
-        <button id="btnCommodities" onclick="changeMarket('Commodities')">Commodities</button>
-      </div>
+  <!-- SEARCH DROPDOWN -->
+  <div class="dropdown" id="dropdown">
+    <input
+      id="pairSearch"
+      placeholder="Search pair or company..."
+      oninput="renderPairs()"
+    >
+    <div id="pairList"></div>
+  </div>
 
-      <!-- PAIR SELECTOR -->
-      <div class="selector-row">
-        <button id="selectedPair" onclick="toggleDropdown()">EUR/USD</button>
-        <button id="openList" onclick="toggleDropdown()">▼</button>
-        <button id="favoriteButton" onclick="addFavorite()">⭐ Favorite</button>
-      </div>
+  <!-- TIMEFRAME -->
+  <select id="timeframe" onchange="loadChart()">
+    <option value="1">1 Minute</option>
+    <option value="5">5 Minutes</option>
+    <option value="15" selected>15 Minutes</option>
+    <option value="30">30 Minutes</option>
+    <option value="60">1 Hour</option>
+    <option value="240">4 Hours</option>
+    <option value="D">1 Day</option>
+    <option value="W">1 Week</option>
+  </select>
 
-      <!-- SEARCH DROPDOWN -->
-      <div class="dropdown" id="dropdown">
-        <input
-          id="pairSearch"
-          placeholder="Search pair or company..."
-          oninput="renderPairs()"
-        >
-        <div id="pairList"></div>
-      </div>
+  <p id="status">Ready</p>
+</div>
 
-      <!-- TIMEFRAME -->
-      <select id="timeframe" onchange="loadChart()">
-        <option value="1">1 Minute</option>
-        <option value="5">5 Minutes</option>
-        <option value="15" selected>15 Minutes</option>
-        <option value="30">30 Minutes</option>
-        <option value="60">1 Hour</option>
-        <option value="240">4 Hours</option>
-        <option value="D">1 Day</option>
-        <option value="W">1 Week</option>
-      </select>
+<!-- WATCHLIST -->
+<div class="panel">
+  <h2>My Watchlist ⭐</h2>
+  <div id="watchlist">No favorite pairs saved.</div>
+</div>
 
-      <p id="status">Ready</p>
-    </div>
+<!-- TRADING CHART -->
+<div class="panel">
+  <h2>Live Trading Chart</h2>
+  <div id="chart"></div>
+</div>
 
-    <!-- WATCHLIST -->
-    <div class="panel">
-      <h2>My Watchlist ⭐</h2>
-      <div id="watchlist">No favorite pairs saved.</div>
-    </div>
+<!-- TECHNICAL ANALYSIS -->
+<div class="panel">
+  <h2>Technical Analysis</h2>
 
-    <!-- TRADING CHART -->
-    <div class="panel">
-      <h2>Live Trading Chart</h2>
-      <div id="chart"></div>
-    </div>
+  <div class="signal" id="signal">WAIT</div>
 
-    <!-- TECHNICAL ANALYSIS -->
-    <div class="panel">
-      <h2>Technical Analysis</h2>
+  <p id="message" style="white-space:pre-line">
+    Select a market and generate analysis.
+  </p>
 
-      <div class="signal" id="signal">WAIT</div>
+  <button onclick="generateAnalysis()">
+    Generate Analysis
+  </button>
+</div>
 
-      <p id="message" style="white-space:pre-line">
-        Select a market and generate analysis.
-      </p>
-
-      <button onclick="generateAnalysis()">
-        Generate Analysis
-      </button>
-    </div>
-
-  </main>
-
-  <footer>
+  </main>  <footer>
     TRADE PRO AI | Professional Market Analysis
     <br><br>
     Trading involves financial risk.
-  </footer>
-
-  <!-- MARKET LIST -->
-  <script src="markets.js"></script>
-
-  <!-- BASIC INDICATORS -->
-  <script src="indicators.js"></script>
-
-  <!-- ADVANCED INDICATORS -->
-  <script src="advanced-indicators.js"></script>
-
-  <!-- PROFILES -->
-  <script src="profiles.js"></script>
-
-  <!-- PATTERNS -->
-  <script src="patterns.js"></script>
-
-  <!-- STRATEGIES -->
-  <script src="strategies.js"></script>
-
-  <!-- SMART MONEY -->
-  <script src="smart-money.js"></script>
-
-  <!-- ANALYSIS ENGINE -->
-  <script src="analysis.js"></script>
-
-  <!-- MARKET DATA -->
-  <script src="data.js"></script>
-
-  <!-- MAIN APPLICATION -->
-  <script src="script.js"></script>
-
-</body>
+  </footer>  <!-- MARKET LIST -->  <script src="markets.js"></script>  <!-- BASIC INDICATORS -->  <script src="indicators.js"></script>  <!-- ADVANCED INDICATORS -->  <script src="advanced-indicators.js"></script>  <!-- PROFILES -->  <script src="profiles.js"></script>  <!-- PATTERNS -->  <script src="patterns.js"></script>  <!-- STRATEGIES -->  <script src="strategies.js"></script>  <!-- SMART MONEY -->  <script src="smart-money.js"></script>  <!-- ANALYSIS ENGINE -->  <script src="analysis.js"></script>  <!-- MARKET DATA -->  <script src="data.js"></script>  <!-- LIGHTWEIGHT CHARTS LIBRARY -->  <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>  <!-- CUSTOM CHART ENGINE -->  <script src="chart-engine.js"></script>  <!-- MAIN APPLICATION -->  <script src="script.js"></script></body>
 </html>
