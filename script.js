@@ -330,11 +330,153 @@
   }
 
   function formatPrice(value) {
-    if (!Number.isFinite(value)) return "N/A";
+    if (!Number.isFinite(Number(value))) return "N/A";
 
-    return value.toLocaleString("en-IN", {
+    return Number(value).toLocaleString("en-IN", {
       maximumFractionDigits: 8
     });
+  }
+
+  function formatList(title, items, formatter) {
+    if (!Array.isArray(items) || !items.length) {
+      return title + ": कोई पुष्टि नहीं मिली।\n";
+    }
+
+    return title + ":\n" +
+      items.map(formatter).join("\n") + "\n";
+  }
+
+  function displayAnalysis(result, timeframe) {
+    const signalBox = $("signal");
+    const messageBox = $("message");
+
+    signalBox.textContent = result.signal || "WAIT";
+
+    let output = "";
+
+    output += "TRADE PRO AI ANALYSIS\n";
+    output += "------------------------------\n";
+
+    output += "Pair: " + selectedPair[0] + "\n";
+    output += "Timeframe: " + timeframe + "\n";
+    output += "Signal: " + result.signal + "\n";
+    output += "Strength: " + result.strength + "%\n";
+    output += "Score: " + result.score + "\n\n";
+
+    output += "PRICE LEVELS\n";
+    output += "Price: " +
+      formatPrice(result.indicators?.price) + "\n";
+
+    output += "Support: " +
+      formatPrice(result.support) + "\n";
+
+    output += "Resistance: " +
+      formatPrice(result.resistance) + "\n\n";
+
+    output += "TRADE PLAN\n";
+
+    output += "Entry: " +
+      formatPrice(result.entry) + "\n";
+
+    output += "Stop Loss: " +
+      formatPrice(result.stopLoss) + "\n";
+
+    if (Array.isArray(result.targets) &&
+        result.targets.length) {
+      result.targets.forEach((target, index) => {
+        output += "TP" + (index + 1) + ": " +
+          formatPrice(target) + "\n";
+      });
+    } else {
+      output += "Targets: WAIT signal होने के कारण उपलब्ध नहीं।\n";
+    }
+
+    output += "\nINDICATORS\n";
+
+    const ind = result.indicators || {};
+
+    output += "EMA 20: " + formatPrice(ind.ema20) + "\n";
+    output += "EMA 50: " + formatPrice(ind.ema50) + "\n";
+    output += "RSI: " + formatPrice(ind.rsi) + "\n";
+    output += "MACD: " + formatPrice(ind.macd) + "\n";
+    output += "MACD Signal: " +
+      formatPrice(ind.macdSignal) + "\n";
+
+    output += "Supertrend: " +
+      (ind.supertrend?.trend || "N/A") + "\n\n";
+
+    output += formatList(
+      "STRATEGY CONFIRMATION",
+      result.strategies,
+      item =>
+        item.name + " — " + item.direction +
+        " (" + item.reason + ")"
+    );
+
+    const smart = result.smartMoney || {};
+
+    output += formatList(
+      "FAIR VALUE GAPS",
+      smart.fvg,
+      item =>
+        item.type + " | Low: " +
+        formatPrice(item.low) +
+        " | High: " + formatPrice(item.high)
+    );
+
+    output += formatList(
+      "ORDER BLOCKS",
+      smart.orderBlocks,
+      item =>
+        item.type + " | Low: " +
+        formatPrice(item.low) +
+        " | High: " + formatPrice(item.high)
+    );
+
+    output += formatList(
+      "LIQUIDITY SWEEPS",
+      smart.liquidity,
+      item =>
+        item.type + " | Price: " +
+        formatPrice(item.price)
+    );
+
+    output += formatList(
+      "SWING LEVELS",
+      smart.swings,
+      item =>
+        item.type + " | Price: " +
+        formatPrice(item.price)
+    );
+
+    output += formatList(
+      "CANDLESTICK PATTERNS",
+      result.candlePatterns,
+      item => item.name + " — " + item.direction
+    );
+
+    output += formatList(
+      "CHART PATTERNS",
+      result.chartPatterns,
+      item => item.name
+    );
+
+    output += "\nANALYSIS REASONS\n";
+
+    if (Array.isArray(result.reasons)) {
+      output += result.reasons
+        .map((reason, index) =>
+          (index + 1) + ". " + reason
+        )
+        .join("\n");
+    }
+
+    output += "\n\nVolume Confirmed: " +
+      (result.volumeConfirmed ? "YES" : "NO");
+
+    output += "\n\nRisk Warning: यह तकनीकी विश्लेषण है, वित्तीय सलाह नहीं।";
+
+    messageBox.textContent = output;
   }
 
   async function generateAnalysis() {
@@ -346,11 +488,9 @@
     signalBox.textContent = "WAIT";
     messageBox.textContent = "Analyzing market data...";
 
-    // अभी केवल Crypto के लिए वास्तविक डेटा उपलब्ध है।
     if (currentMarket !== "Crypto") {
       messageBox.textContent =
         "इस Market का अपना live candle data provider अभी जुड़ा नहीं है। इसलिए कोई BUY/SELL signal नहीं दिया जाएगा।";
-
       return;
     }
 
@@ -360,6 +500,10 @@
         throw new Error(
           "Analysis modules are not loaded."
         );
+      }
+
+      if (!selectedPair) {
+        throw new Error("कृपया पहले कोई Pair चुनें।");
       }
 
       const selectedInterval =
@@ -382,34 +526,23 @@
       const result =
         window.TRADE_ANALYSIS.analyze(candles);
 
-      signalBox.textContent = result.signal;
-
-      const reasons = Array.isArray(result.reasons)
-        ? result.reasons.join("\n")
-        : "";
-
-      messageBox.textContent =
-        "Pair: " + selectedPair[0] + "\n" +
-        "Timeframe: " + timeframe + "\n" +
-        "Signal: " + result.signal + "\n" +
-        "Strength: " + result.strength + "%\n" +
-        "Price: " +
-        formatPrice(result.indicators?.price) + "\n" +
-        "Support: " +
-        formatPrice(result.support) + "\n" +
-        "Resistance: " +
-        formatPrice(result.resistance) + "\n\n" +
-        reasons;
+      displayAnalysis(result, timeframe);
 
     } catch (error) {
       signalBox.textContent = "WAIT";
 
       messageBox.textContent =
         "Analysis नहीं हो पाया: " + error.message;
+
+      console.error(
+        "TRADE PRO AI Error:",
+        error
+      );
     }
   }
 
-  // Make functions available to HTML buttons.
+  // HTML BUTTON CONNECTIONS
+
   window.changeMarket = changeMarket;
   window.toggleDropdown = toggleDropdown;
   window.renderPairs = renderPairs;
@@ -433,4 +566,4 @@
     initializeTradePro();
   }
 
-})()
+})();
