@@ -20,7 +20,6 @@ window.TRADE_DATA = (() => {
   }
 
   async function getCandles(symbol, timeframe = "15m", limit = 500) {
-
     const pair = normalizeSymbol(symbol);
 
     if (!TIMEFRAMES.includes(timeframe)) {
@@ -29,7 +28,7 @@ window.TRADE_DATA = (() => {
 
     const safeLimit = Math.min(
       1000,
-      Math.max(1, Number(limit) || 500)
+      Math.max(1, Math.floor(Number(limit) || 500))
     );
 
     const url = new URL(BINANCE_API);
@@ -41,9 +40,7 @@ window.TRADE_DATA = (() => {
     const response = await fetch(url.toString());
 
     if (!response.ok) {
-      throw new Error(
-        "Binance API error: " + response.status
-      );
+      throw new Error("Binance API error: " + response.status);
     }
 
     const data = await response.json();
@@ -65,7 +62,6 @@ window.TRADE_DATA = (() => {
   }
 
   async function getLatestPrice(symbol) {
-
     const pair = normalizeSymbol(symbol);
 
     const url = new URL(
