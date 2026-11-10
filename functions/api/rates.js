@@ -1,6 +1,10 @@
 import { getLiveRatesKey } from "../_utils/liveRates.js";
 
 function toNumber(value) {
+  if (value === null || value === undefined || value === "" || value === "n/a") {
+    return null;
+  }
+
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -10,7 +14,7 @@ export async function onRequestGet({ env }) {
     const apiKey = await getLiveRatesKey(env);
 
     const providerURL = new URL(
-      "https://www.live-rates.com/api/rates"
+      "https://www.live-rates.com/rates"
     );
 
     providerURL.searchParams.set("key", apiKey);
@@ -33,11 +37,11 @@ export async function onRequestGet({ env }) {
 
     const data = await response.json();
 
-    if (!Array.isArray(data)) {
+    if (!Array.isArray(data) || data.some(item => item?.error)) {
       return Response.json(
         {
           success: false,
-          error: "Invalid market data received."
+          error: "Invalid or unavailable market data."
         },
         { status: 502 }
       );
@@ -49,9 +53,8 @@ export async function onRequestGet({ env }) {
         symbol: String(item.currency)
           .replace(/[^a-zA-Z0-9]/g, "")
           .toUpperCase(),
-
         currency: item.currency,
-        bid: toNumber(item.bid),
+        bid: toNumber(item.bid ?? item.rate),
         ask: toNumber(item.ask),
         open: toNumber(item.open),
         high: toNumber(item.high),
@@ -80,7 +83,12 @@ export async function onRequestGet({ env }) {
         success: false,
         error: "Unable to retrieve market rates."
       },
-      { status: 502 }
+      {
+        status: 502,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
     );
   }
 }
