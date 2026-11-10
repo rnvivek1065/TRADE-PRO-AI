@@ -1,19 +1,16 @@
+import { getLiveRatesKey } from "../_utils/liveRates.js";
+
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 export async function onRequestGet({ env }) {
-  const apiKey = env.LIVE_RATES_API_KEY;
-
-  if (!apiKey) {
-    return Response.json(
-      {
-        success: false,
-        error: "Live-Rates API key is not configured."
-      },
-      { status: 503 }
-    );
-  }
-
   try {
+    const apiKey = await getLiveRatesKey(env);
+
     const providerURL = new URL(
-      "https://www.live-rates.com/rates"
+      "https://www.live-rates.com/api/rates"
     );
 
     providerURL.searchParams.set("key", apiKey);
@@ -28,7 +25,7 @@ export async function onRequestGet({ env }) {
       return Response.json(
         {
           success: false,
-          error: "Live-Rates provider is unavailable."
+          error: "Live market provider unavailable."
         },
         { status: 502 }
       );
@@ -47,20 +44,22 @@ export async function onRequestGet({ env }) {
     }
 
     const rates = data
-      .filter(item =>
-        item &&
-        Number.isFinite(Number(item.bid ?? item.rate))
-      )
+      .filter(item => item && item.currency)
       .map(item => ({
-        symbol: item.currency,
-        bid: Number(item.bid ?? item.rate),
-        ask: Number(item.ask),
-        high: Number(item.high),
-        low: Number(item.low),
-        open: Number(item.open),
-        close: Number(item.close),
-        timestamp: Number(item.timestamp)
-      }));
+        symbol: String(item.currency)
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .toUpperCase(),
+
+        currency: item.currency,
+        bid: toNumber(item.bid),
+        ask: toNumber(item.ask),
+        open: toNumber(item.open),
+        high: toNumber(item.high),
+        low: toNumber(item.low),
+        close: toNumber(item.close),
+        timestamp: toNumber(item.timestamp)
+      }))
+      .filter(item => item.symbol && item.bid !== null);
 
     return Response.json(
       {
