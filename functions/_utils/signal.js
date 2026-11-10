@@ -253,7 +253,15 @@ function deriveLevels(action, entry, structure) {
  * @param {object} [input.dataStatus]   provenance from the provider adapter
  * @returns {object} the signal result
  */
-export function analyze({ closes, quote = null, instrument, timeframe, now, dataStatus = {} }) {
+export function analyze({
+  closes,
+  quote = null,
+  instrument,
+  timeframe,
+  now,
+  dataStatus = {},
+  minBars = MIN_BARS
+}) {
   const values = toNumbers(closes ?? []);
   const unsupported = unsupportedFeatures();
 
@@ -271,16 +279,16 @@ export function analyze({ closes, quote = null, instrument, timeframe, now, data
   };
 
   /* -------- data availability ------------------------------------------- */
-  if (values.length < MIN_BARS) {
+  if (values.length < minBars) {
     return {
       ...base,
       action: "WAIT",
       dataAvailable: false,
       reason: "insufficient_history",
       message:
-        `This instrument has ${values.length} usable daily closes, but ${MIN_BARS} are required ` +
+        `This instrument has ${values.length} usable closes, but ${minBars} are required ` +
         "for a reliable reading. No signal is generated rather than a guessed one.",
-      requiredBars: MIN_BARS,
+      requiredBars: minBars,
       availableBars: values.length,
       confidence: 0,
       entry: null,
@@ -290,7 +298,7 @@ export function analyze({ closes, quote = null, instrument, timeframe, now, data
       riskReward: null,
       votes: [],
       explanation: [
-        `Only ${values.length} of ${MIN_BARS} required daily closes are available.`,
+        `Only ${values.length} of ${minBars} required closes are available.`,
         "No signal was generated to avoid presenting unsupported analysis."
       ],
       dataStatus
