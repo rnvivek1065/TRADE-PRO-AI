@@ -1,0 +1,57 @@
+-- TRADE PRO AI — 0002 additive column reconciliation
+--
+-- READ THIS BEFORE RUNNING ANYTHING.
+--
+-- SQLite (and therefore D1) has no `ADD COLUMN IF NOT EXISTS`. Every statement
+-- below is therefore COMMENTED OUT: run only the ones you actually need, one
+-- at a time, after inspecting your existing schema with PRAGMA table_info.
+--
+-- These statements are additive only:
+--   * ADD COLUMN never rewrites or deletes existing rows.
+--   * The new column is filled with its DEFAULT for existing rows.
+--   * There is no DROP, TRUNCATE, DELETE or UPDATE in this file.
+--
+-- Required columns, by file that depends on them:
+--   functions/api/auth/callback.js  -> users: google_sub, email, name, picture,
+--                                      role, plan, status, created_at,
+--                                      last_login_at
+--   functions/_utils/auth.js        -> users: google_sub, email, name, picture,
+--                                      role, plan, status, pro_expires_at,
+--                                      created_at
+--                                      sessions: token_hash, google_sub,
+--                                      expires_at
+--   functions/_utils/liveRates.js   -> app_settings: setting_name,
+--                                      encrypted_value
+--
+-- Inspect first:
+--   npx wrangler d1 execute <database-name> --remote --command "PRAGMA table_info(users);"
+--   npx wrangler d1 execute <database-name> --remote --command "PRAGMA table_info(sessions);"
+--   npx wrangler d1 execute <database-name> --remote --command "PRAGMA table_info(app_settings);"
+
+-- users -------------------------------------------------------------------
+-- ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user';
+-- ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'basic';
+-- ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
+-- ALTER TABLE users ADD COLUMN pro_expires_at INTEGER;
+-- ALTER TABLE users ADD COLUMN name TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN picture TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN created_at TEXT;
+-- ALTER TABLE users ADD COLUMN last_login_at TEXT;
+-- ALTER TABLE users ADD COLUMN updated_at TEXT;
+
+-- sessions ----------------------------------------------------------------
+-- ALTER TABLE sessions ADD COLUMN google_sub TEXT;
+-- ALTER TABLE sessions ADD COLUMN created_at TEXT;
+
+-- app_settings ------------------------------------------------------------
+-- ALTER TABLE app_settings ADD COLUMN updated_at INTEGER;
+
+-- Indexes that may be missing on a hand-created table (safe to re-run):
+-- CREATE INDEX IF NOT EXISTS idx_sessions_google_sub ON sessions (google_sub);
+-- CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions (expires_at);
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users (google_sub);
+
+-- Type note: if your existing `pro_expires_at` is TEXT, you do NOT need to
+-- change it. functions/_utils/auth.js parseTime() accepts ISO strings, epoch
+-- seconds and epoch milliseconds alike. Do not migrate the column type just
+-- for consistency — that would be a destructive rewrite for no benefit.

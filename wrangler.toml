@@ -32,6 +32,4 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 # ---------------------------------------------------------------------------
 # Migrations are NOT applied automatically by Pages. Apply them deliberately
 # after inspecting the existing schema — see migrations/README.md.
-[[d1_databases.migrations_dir]]
-# (placeholder table is not used; `migrations_dir` is configured via the
-#  command line below instead, to avoid ambiguity with existing data)
+migrations_dir = "migrations"
