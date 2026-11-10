@@ -3,54 +3,46 @@
 window.TRADE_CHART = (() => {
   let chart = null;
   let candleSeries = null;
-  let overlay = null;
   let canvas = null;
   let context = null;
   let currentCandles = [];
   let currentAnalysis = null;
+  let resizeObserver = null;
 
   function initialize(containerId = "chart") {
     const container = document.getElementById(containerId);
 
     if (!container || !window.LightweightCharts) {
-      console.error("Chart container or chart library missing.");
+      console.error("Chart container or library missing.");
       return false;
+    }
+
+    if (chart) {
+      if (resizeObserver) resizeObserver.disconnect();
+      chart.remove();
+      chart = null;
     }
 
     container.innerHTML = "";
     container.style.position = "relative";
-    container.style.background = "#ffffff";
 
     chart = LightweightCharts.createChart(container, {
-      width: container.clientWidth,
-      height: container.clientHeight,
-
+      width: Math.max(320, container.clientWidth),
+      height: Math.max(300, container.clientHeight),
       layout: {
         background: { color: "#ffffff" },
-        textColor: "#191919",
-        fontFamily: "Arial",
-        fontSize: 12
+        textColor: "#191919"
       },
-
       grid: {
         vertLines: { color: "#f0f3fa" },
         horzLines: { color: "#f0f3fa" }
       },
-
-      rightPriceScale: {
-        borderColor: "#d1d4dc"
-      },
-
+      rightPriceScale: { borderColor: "#d1d4dc" },
       timeScale: {
         borderColor: "#d1d4dc",
-        timeVisible: true,
-        secondsVisible: false
+        timeVisible: true
       },
-
-      crosshair: {
-        mode: 1
-      },
-
+      crosshair: { mode: 1 },
       handleScroll: true,
       handleScale: true
     });
@@ -65,43 +57,46 @@ window.TRADE_CHART = (() => {
     });
 
     canvas = document.createElement("canvas");
-    canvas.style.position = "absolute";
-    canvas.style.left = "0";
-    canvas.style.top = "0";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "5";
+
+    Object.assign(canvas.style, {
+      position: "absolute",
+      left: "0",
+      top: "0",
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
+      zIndex: "5"
+    });
 
     container.appendChild(canvas);
     context = canvas.getContext("2d");
 
     chart.timeScale().subscribeVisibleTimeRangeChange(draw);
-    chart.subscribeCrosshairMove(draw);
 
-    new ResizeObserver(() => {
+    resizeObserver = new ResizeObserver(() => {
       chart.applyOptions({
-        width: container.clientWidth,
-        height: container.clientHeight
+        width: Math.max(320, container.clientWidth),
+        height: Math.max(300, container.clientHeight)
       });
 
       resizeCanvas();
       draw();
-    }).observe(container);
+    });
 
+    resizeObserver.observe(container);
     resizeCanvas();
 
     return true;
   }
 
   function resizeCanvas() {
-    if (!canvas) return;
+    if (!canvas || !context) return;
 
     const rect = canvas.getBoundingClientRect();
     const ratio = window.devicePixelRatio || 1;
 
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
+    canvas.width = Math.round(rect.width * ratio);
+    canvas.height = Math.round(rect.height * ratio);
 
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
@@ -109,31 +104,41 @@ window.TRADE_CHART = (() => {
   function setCandles(candles) {
     if (!candleSeries || !Array.isArray(candles)) return;
 
-    currentCandles = candles;
-
-    candleSeries.setData(
-      candles.map(c => ({
-        time: c.time,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close
-      }))
+    const valid = candles.filter(c =>
+      Number.isFinite(Number(c.time)) &&
+      Number.isFinite(Number(c.open)) &&
+      Number.isFinite(Number(c.high)) &&
+      Number.isFinite(Number(c.low)) &&
+      Number.isFinite(Number(c.close))
     );
+
+    if (!valid.length) return;
+
+    currentCandles = valid;
+
+    candleSeries.setData(valid.map(c => ({
+      time: c.time,
+      open: Number(c.open),
+      high: Number(c.high),
+      low: Number(c.low),
+      close: Number(c.close)
+    })));
 
     chart.timeScale().fitContent();
     draw();
   }
 
-  function drawLine(price, label, color, style = 2) {
-    if (!Number.isFinite(Number(price))) return;
+  function drawLine(price, label, color, dashed = false) {
+    const value = Number(price);
 
-    const y = candleSeries.priceToCoordinate(Number(price));
+    if (!Number.isFinite(value)) return;
+
+    const y = candleSeries.priceToCoordinate(value);
 
     if (y === null) return;
 
     context.beginPath();
-    context.setLineDash(style === 2 ? [] : [6, 4]);
+    context.setLineDash(dashed ? [6, 4] : []);
     context.strokeStyle = color;
     context.lineWidth = 1.5;
     context.moveTo(0, y);
@@ -141,18 +146,28 @@ window.TRADE_CHART = (() => {
     context.stroke();
     context.setLineDash([]);
 
-    context.fillStyle = color;
     context.font = "12px Arial";
-    context.fillText(label + " " + Number(price).toFixed(2), 8, y - 5);
+
+    const text = label + " " + value.toLocaleString("en-US", {
+      maximumFractionDigits: 8
+    });
+
+    context.fillStyle = "rgba(255,255,255,0.9)";
+    context.fillRect(7, y - 17, context.measureText(text).width + 12, 18);
+
+    context.fillStyle = color;
+    context.fillText(text, 12, y - 4);
   }
 
-  function drawZone(zone, color, label) {
+  function drawZone(zone, bullish) {
     if (!zone) return;
 
     const low = Number(zone.low);
     const high = Number(zone.high);
 
-    if (!Number.isFinite(low) || !Number.isFinite(high)) return;
+    if (!Number.isFinite(low) ||
+        !Number.isFinite(high) ||
+        high <= low) return;
 
     const y1 = candleSeries.priceToCoordinate(high);
     const y2 = candleSeries.priceToCoordinate(low);
@@ -162,77 +177,117 @@ window.TRADE_CHART = (() => {
     const top = Math.min(y1, y2);
     const height = Math.max(2, Math.abs(y2 - y1));
 
-    context.fillStyle = color;
+    context.fillStyle = bullish
+      ? "rgba(38,166,154,0.14)"
+      : "rgba(239,83,80,0.14)";
+
     context.fillRect(0, top, canvas.clientWidth, height);
 
-    context.strokeStyle = color.replace("0.12", "0.65");
+    context.strokeStyle = bullish ? "#26a69a" : "#ef5350";
     context.strokeRect(0, top, canvas.clientWidth, height);
 
-    context.fillStyle = "#333333";
     context.font = "11px Arial";
-    context.fillText(label, 8, top + 13);
+    context.fillStyle = bullish ? "#087f70" : "#c62828";
+
+    context.fillText(
+      bullish ? "BULLISH FVG" : "BEARISH FVG",
+      8,
+      top + 13
+    );
+  }
+
+  function drawTrendline(swings) {
+    if (!Array.isArray(swings)) return;
+
+    const highs = swings
+      .filter(x => x.type === "SWING HIGH")
+      .slice(-2);
+
+    const lows = swings
+      .filter(x => x.type === "SWING LOW")
+      .slice(-2);
+
+    const points = highs.length === 2
+      ? highs
+      : lows.length === 2 ? lows : [];
+
+    if (points.length !== 2) return;
+
+    const first = currentCandles[points[0].index];
+    const second = currentCandles[points[1].index];
+
+    if (!first || !second) return;
+
+    const x1 = chart.timeScale().timeToCoordinate(first.time);
+    const x2 = chart.timeScale().timeToCoordinate(second.time);
+
+    const y1 = candleSeries.priceToCoordinate(Number(points[0].price));
+    const y2 = candleSeries.priceToCoordinate(Number(points[1].price));
+
+    if ([x1, x2, y1, y2].some(v => v === null)) return;
+
+    context.beginPath();
+    context.strokeStyle = highs.length === 2 ? "#8e44ad" : "#00897b";
+    context.lineWidth = 2;
+    context.setLineDash([7, 4]);
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.stroke();
+    context.setLineDash([]);
+  }
+
+  function drawMarketStructure(swings) {
+    if (!Array.isArray(swings)) return;
+
+    swings.slice(-6).forEach(item => {
+      const y = candleSeries.priceToCoordinate(Number(item.price));
+
+      if (y === null) return;
+
+      context.fillStyle =
+        item.type === "SWING HIGH" ? "#ad5a00" : "#087f70";
+
+      context.font = "10px Arial";
+      context.fillText(item.type, 8, y - 3);
+    });
   }
 
   function draw() {
     if (!context || !canvas || !candleSeries) return;
 
-    context.clearRect(
-      0, 0,
-      canvas.clientWidth,
-      canvas.clientHeight
-    );
+    context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
-    if (!currentAnalysis) return;
+    if (!currentAnalysis || !currentCandles.length) return;
 
     const a = currentAnalysis;
 
-    drawLine(a.support, "SUPPORT", "#2196f3", 1);
-    drawLine(a.resistance, "RESISTANCE", "#ff9800", 1);
-
-    if (a.entry > 0) {
-      drawLine(a.entry, "ENTRY", "#2962ff", 2);
-    }
-
-    if (a.stopLoss > 0) {
-      drawLine(a.stopLoss, "STOP LOSS", "#f23645", 2);
-    }
-
-    if (Array.isArray(a.targets)) {
-      a.targets.forEach((target, index) => {
-        drawLine(
-          Number(target),
-          "TP" + (index + 1),
-          "#089981",
-          2
-        );
-      });
-    }
+    drawLine(a.support, "SUPPORT", "#2196f3", true);
+    drawLine(a.resistance, "RESISTANCE", "#ff9800", true);
 
     const smart = a.smartMoney || {};
 
-    (smart.fvg || []).slice(-8).forEach(zone => {
-      drawZone(
-        zone,
-        zone.type === "BULLISH"
-          ? "rgba(38,166,154,0.12)"
-          : "rgba(239,83,80,0.12)",
-        "FVG " + (zone.type || "")
-      );
+    (smart.fvg || []).slice(-5).forEach(zone => {
+      const type = String(zone.type || "").toUpperCase();
+      drawZone(zone, type.includes("BULLISH"));
     });
 
-    (smart.orderBlocks || []).slice(-6).forEach(zone => {
-      drawZone(
-        zone,
-        zone.type === "BULLISH"
-          ? "rgba(33,150,243,0.12)"
-          : "rgba(255,152,0,0.12)",
-        "ORDER BLOCK " + (zone.type || "")
-      );
-    });
+    drawTrendline(smart.swings);
+    drawMarketStructure(smart.swings);
+
+    if (a.signal === "BUY" || a.signal === "SELL") {
+      drawLine(a.entry, "ENTRY", "#2962ff");
+      drawLine(a.stopLoss, "STOP LOSS", "#f23645");
+
+      (Array.isArray(a.targets) ? a.targets : [])
+        .slice(0, 3)
+        .forEach((target, index) => {
+          drawLine(target, "TARGET " + (index + 1), "#089981");
+        });
+    }
   }
 
   function showAnalysis(result) {
-    currentAnalysis = result;
+    currentAnalysis = result || null;
     draw();
   }
 
