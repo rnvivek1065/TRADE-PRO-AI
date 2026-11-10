@@ -111,7 +111,8 @@ function seedUser(db, options = {}) {
 
 function seedSession(db, googleSub) {
   const token = randomBytes(32).toString("hex");
-  const hash = createHash("sha256").update(token).digest("hex");
+  // Sessions store sha256(token) base64url-encoded, matching auth.sha256().
+  const hash = createHash("sha256").update(token).digest("base64url");
 
   db.query(
     `INSERT INTO sessions (token_hash, google_sub, expires_at, created_at)
@@ -775,8 +776,13 @@ test("rolling 24h window is measured from each signal, not calendar midnight", a
 
   assert.equal(usage.used, 1, "only the signal inside 24h may count");
   assert.equal(usage.remaining, 4);
-  assert.ok(usage.resetAt);
-  assert.ok(Date.parse(usage.resetAt) > Date.now());
+
+  // resetAt is only meaningful once the limit is reached; the 429 test covers it.
+  assert.equal(usage.resetAt, null);
+
+  // The window slides with "now" instead of resetting at calendar midnight.
+  const windowAge = Date.now() - Date.parse(usage.windowStart);
+  assert.ok(Math.abs(windowAge - 86400000) < 60000, `window start age was ${windowAge}ms`);
 
   restoreFetch();
 });
@@ -993,7 +999,12 @@ test("migrations are additive, idempotent and preserve existing users", async ()
   assert.equal(rows[0].status, "active");
 
   for (const name of MIGRATIONS) {
-    const sql = migrationSql(name);
+    // Strip `--` comments: the migrations document their own safety rules, and
+    // prose mentioning DROP/TRUNCATE must not be read as an actual statement.
+    const sql = migrationSql(name)
+      .split("\n")
+      .map(line => line.replace(/--.*$/, ""))
+      .join("\n");
 
     assert.ok(!/\bDROP\s+TABLE\b/i.test(sql), `${name} must not drop tables`);
     assert.ok(!/\bTRUNCATE\b/i.test(sql), `${name} must not truncate`);
