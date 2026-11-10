@@ -117,7 +117,10 @@ export class D1Shim {
   }
 
   run(sql) {
-    return execFileSync("sqlite3", ["-json", this.path], {
+    // `.timeout` is per connection, so it must be passed on every invocation.
+    // Without it, concurrent writers fail immediately with SQLITE_BUSY instead
+    // of waiting for the lock, which would make quota tests flaky.
+    return execFileSync("sqlite3", ["-json", "-cmd", ".timeout 15000", this.path], {
       input: sql,
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024
@@ -129,11 +132,17 @@ export class D1Shim {
   }
 
   exec(sql) {
-    execFileSync("sqlite3", [this.path], {
+    execFileSync("sqlite3", ["-cmd", ".timeout 15000", this.path], {
       input: sql,
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024
     });
+    return this;
+  }
+
+  /** Enables WAL so the quota tests exercise real concurrent write access. */
+  enableWal() {
+    this.exec("PRAGMA journal_mode = WAL;");
     return this;
   }
 

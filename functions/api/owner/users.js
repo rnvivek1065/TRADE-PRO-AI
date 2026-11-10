@@ -236,8 +236,10 @@ export const onRequestPost = withErrors(async ({ request, env }) => {
         throw new HttpError("invalid_date", "Provide a valid ISO date or null.", 400);
       }
 
+      // Stored as epoch milliseconds to match the users.pro_expires_at
+      // INTEGER column in the baseline schema.
       await env.DB.prepare(`UPDATE users SET pro_expires_at = ? WHERE google_sub = ?`)
-        .bind(iso, googleSub)
+        .bind(iso === null ? null : Date.parse(iso), googleSub)
         .run();
       break;
     }
