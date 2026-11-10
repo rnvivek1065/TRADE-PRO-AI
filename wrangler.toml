@@ -20,8 +20,8 @@ pages_build_output_dir = "."
 #   npx wrangler d1 list
 #
 # Keep `binding = "DB"` exactly as-is: functions/_utils/auth.js,
-# functions/api/auth/*.js, functions/_utils/liveRates.js and
-# functions/api/health.js all depend on that name.
+# functions/_utils/quota.js, functions/_utils/guards.js and every
+# functions/api/** endpoint depend on that name.
 [[d1_databases]]
 binding = "DB"
 database_name = "trade-pro-ai"
