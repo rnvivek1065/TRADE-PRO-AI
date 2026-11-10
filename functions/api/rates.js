@@ -1,94 +1,56 @@
-import { getLiveRatesKey } from "../_utils/liveRates.js";
+/**
+ * GET /api/rates
+ *
+ * Legacy alias kept for compatibility, now served from the approved server-side
+ * instrument catalogue instead of calling the provider on every request.
+ *
+ * The catalogue is the same source /api/quotes validates against, so this
+ * endpoint can never advertise an instrument the rest of the app would reject.
+ * Provider reachability is reported separately by /api/status and /api/health.
+ */
 
-function toNumber(value) {
-  if (value === null || value === undefined || value === "" || value === "n/a") {
-    return null;
-  }
+import { listMarkets, listInstruments, allSymbols, MARKET_IDS } from "../_utils/markets.js";
+import { okResponse, requireMethod, withErrors, clientIp } from "../_utils/http.js";
+import { requireUser } from "../_utils/guards.js";
+import { LIMITS, enforce } from "../_utils/ratelimit.js";
+import { isConfigured } from "../_utils/provider.js";
 
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-}
+export const onRequestGet = withErrors(async ({ request, env }) => {
+  const wrongMethod = requireMethod(request, "GET", "GET");
+  if (wrongMethod) return wrongMethod;
 
-export async function onRequestGet({ env }) {
-  try {
-    const apiKey = await getLiveRatesKey(env);
+  const user = await requireUser(request, env);
 
-    const providerURL = new URL(
-      "https://www.live-rates.com/rates"
-    );
+  const limited = await enforce(env, {
+    bucket: `rates:${user.googleSub || clientIp(request)}`,
+    limit: LIMITS.readPerMinute,
+    windowSeconds: 60
+  });
 
-    providerURL.searchParams.set("key", apiKey);
+  if (limited) return limited;
 
-    const response = await fetch(providerURL.toString(), {
-      headers: {
-        Accept: "application/json"
-      }
-    });
+  const url = new URL(request.url);
+  const marketId = String(url.searchParams.get("market") ?? "").trim();
 
-    if (!response.ok) {
-      return Response.json(
-        {
-          success: false,
-          error: "Live market provider unavailable."
-        },
-        { status: 502 }
-      );
-    }
+  const markets = listMarkets();
+  const selected = MARKET_IDS.includes(marketId) ? marketId : null;
 
-    const data = await response.json();
+  const instruments = selected === null
+    ? markets.flatMap(market => listInstruments(market.id))
+    : listInstruments(selected);
 
-    if (!Array.isArray(data) || data.some(item => item?.error)) {
-      return Response.json(
-        {
-          success: false,
-          error: "Invalid or unavailable market data."
-        },
-        { status: 502 }
-      );
-    }
-
-    const rates = data
-      .filter(item => item && item.currency)
-      .map(item => ({
-        symbol: String(item.currency)
-          .replace(/[^a-zA-Z0-9]/g, "")
-          .toUpperCase(),
-        currency: item.currency,
-        bid: toNumber(item.bid ?? item.rate),
-        ask: toNumber(item.ask),
-        open: toNumber(item.open),
-        high: toNumber(item.high),
-        low: toNumber(item.low),
-        close: toNumber(item.close),
-        timestamp: toNumber(item.timestamp)
-      }))
-      .filter(item => item.symbol && item.bid !== null);
-
-    return Response.json(
-      {
-        success: true,
-        count: rates.length,
-        rates
-      },
-      {
-        headers: {
-          "Cache-Control": "no-store"
-        }
-      }
-    );
-
-  } catch (error) {
-    return Response.json(
-      {
-        success: false,
-        error: "Unable to retrieve market rates."
-      },
-      {
-        status: 502,
-        headers: {
-          "Cache-Control": "no-store"
-        }
-      }
-    );
-  }
-}
+  return okResponse({
+    source: "live-rates",
+    providerConfigured: isConfigured(env),
+    market: selected,
+    total: instruments.length,
+    instruments: instruments.map(instrument => ({
+      symbol: instrument.symbol,
+      market: instrument.market,
+      label: instrument.label ?? instrument.symbol,
+      history: instrument.history ?? "unknown",
+      verified: Boolean(instrument.verified)
+    })),
+    supportedSymbols: allSymbols()
+  });
+});
