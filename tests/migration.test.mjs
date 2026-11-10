@@ -130,23 +130,39 @@ test("baseline migration creates the schema from scratch on an empty database", 
       "SELECT name FROM sqlite_master WHERE type='index' ORDER BY name;"
     );
 
-    assert.match(indexes, /idx_sessions_token_hash/);
-    assert.match(indexes, /idx_users_email/);
+    assert.match(indexes, /idx_sessions_google_sub/);
+    assert.match(indexes, /idx_sessions_expires_at/);
+    assert.match(indexes, /idx_users_plan/);
+    assert.match(indexes, /idx_users_google_sub/);
   });
 });
 
 test("additive ALTER statements add columns without touching data", () => {
   withDatabase(database => {
+    // Simulates a hand-created schema missing every column that 0002 adds.
     applySql(
       database,
       `
       CREATE TABLE users (
         google_sub TEXT PRIMARY KEY,
-        email TEXT NOT NULL,
-        plan TEXT NOT NULL DEFAULT 'basic'
+        email TEXT NOT NULL
       );
-      INSERT INTO users (google_sub, email, plan)
-      VALUES ('s1', 'a@example.com', 'pro');
+      INSERT INTO users (google_sub, email)
+      VALUES ('s1', 'a@example.com');
+
+      CREATE TABLE sessions (
+        token_hash TEXT PRIMARY KEY,
+        expires_at TEXT
+      );
+      INSERT INTO sessions (token_hash, expires_at)
+      VALUES ('h1', '2027-01-01T00:00:00.000Z');
+
+      CREATE TABLE app_settings (
+        setting_name TEXT PRIMARY KEY,
+        encrypted_value TEXT NOT NULL
+      );
+      INSERT INTO app_settings (setting_name, encrypted_value)
+      VALUES ('live_rates_key', 'blob');
       `
     );
 
@@ -170,11 +186,18 @@ test("additive ALTER statements add columns without touching data", () => {
     assert.match(columns, /updated_at/);
     assert.match(columns, /last_login_at/);
 
-    // Existing row untouched, new columns defaulted.
+    // Existing rows untouched, new columns defaulted.
     assert.equal(query(database, "SELECT COUNT(*) FROM users;"), "1");
-    assert.equal(query(database, "SELECT plan FROM users;"), "pro");
-    assert.equal(query(database, "SELECT status FROM users;"), "active");
+    assert.equal(query(database, "SELECT COUNT(*) FROM sessions;"), "1");
+    assert.equal(query(database, "SELECT COUNT(*) FROM app_settings;"), "1");
     assert.equal(query(database, "SELECT email FROM users;"), "a@example.com");
+    assert.equal(query(database, "SELECT plan FROM users;"), "basic");
+    assert.equal(query(database, "SELECT status FROM users;"), "active");
+    assert.equal(query(database, "SELECT role FROM users;"), "user");
+    assert.equal(
+      query(database, "SELECT pro_expires_at IS NULL FROM users;"),
+      "1"
+    );
   });
 });
 
@@ -207,9 +230,9 @@ test("the callback upsert preserves an existing plan and status", () => {
 
     const now = new Date().toISOString();
 
-    execFileSync("sqlite3", [
-      database,
-      upsert,
+    // The sqlite3 CLI does not bind `?` placeholders supplied as argv, so the
+    // values are inlined here. They are fixed test constants, not user input.
+    const values = [
       "sub-1",
       "user@example.com",
       "New Name",
@@ -219,7 +242,9 @@ test("the callback upsert preserves an existing plan and status", () => {
       "inactive",
       now,
       now
-    ]);
+    ].map(value => `'${String(value).replace(/'/g, "''")}'`);
+
+    applySql(database, upsert.replace(/\?/g, () => values.shift()));
 
     // Profile refreshes; the owner's manual plan and status do not.
     assert.equal(query(database, "SELECT name FROM users;"), "New Name");
