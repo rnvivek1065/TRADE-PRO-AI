@@ -1,16 +1,15 @@
+import { getLiveRatesKey } from "../_utils/liveRates.js";
+
+function safeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 export async function onRequestGet({ request, env }) {
-  const apiKey = env.LIVE_RATES_API_KEY;
-
-  if (!apiKey) {
-    return Response.json(
-      { success: false, error: "Live-Rates API key is not configured." },
-      { status: 503 }
-    );
-  }
-
   const url = new URL(request.url);
+
   const symbol = (url.searchParams.get("symbol") || "")
-    .replace(/[^a-zA-Z0-9_]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
     .toUpperCase();
 
   if (!symbol || symbol.length > 20) {
@@ -21,6 +20,8 @@ export async function onRequestGet({ request, env }) {
   }
 
   try {
+    const apiKey = await getLiveRatesKey(env);
+
     const providerURL = new URL(
       "https://www.live-rates.com/api/price"
     );
@@ -40,20 +41,21 @@ export async function onRequestGet({ request, env }) {
     }
 
     const data = await response.json();
+    const item = Array.isArray(data) ? data[0] : data;
 
-    if (data.error) {
+    if (!item || item.error) {
       return Response.json(
-        { success: false, error: "Live market data request failed." },
-        { status: 502 }
+        { success: false, error: "Market data not found." },
+        { status: 404 }
       );
     }
 
-    const item = Array.isArray(data) ? data[0] : data;
+    const bid = safeNumber(item.bid ?? item.rate);
 
-    if (!item || !Number.isFinite(Number(item.bid ?? item.rate))) {
+    if (bid === null) {
       return Response.json(
-        { success: false, error: "No valid market price received." },
-        { status: 404 }
+        { success: false, error: "Invalid market price received." },
+        { status: 502 }
       );
     }
 
@@ -61,23 +63,25 @@ export async function onRequestGet({ request, env }) {
       {
         success: true,
         symbol: item.currency || symbol,
-        bid: Number(item.bid ?? item.rate),
-        ask: Number(item.ask),
-        high: Number(item.high),
-        low: Number(item.low),
-        open: Number(item.open),
-        close: Number(item.close),
-        timestamp: Number(item.timestamp)
+        bid,
+        ask: safeNumber(item.ask),
+        high: safeNumber(item.high),
+        low: safeNumber(item.low),
+        open: safeNumber(item.open),
+        close: safeNumber(item.close),
+        timestamp: safeNumber(item.timestamp)
       },
       {
-        headers: {
-          "Cache-Control": "no-store"
-        }
+        headers: { "Cache-Control": "no-store" }
       }
     );
+
   } catch (error) {
     return Response.json(
-      { success: false, error: "Unable to retrieve market data." },
+      {
+        success: false,
+        error: "Unable to retrieve market data."
+      },
       { status: 502 }
     );
   }
