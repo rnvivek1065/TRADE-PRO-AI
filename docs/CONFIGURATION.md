@@ -34,8 +34,8 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 Replace it with the id of your existing database (`npx wrangler d1 list`).
 Keep `binding = "DB"` unchanged — `functions/_utils/auth.js`,
-`functions/api/auth/*.js`, `functions/_utils/liveRates.js` and
-`functions/api/health.js` all read `env.DB`.
+`functions/_utils/quota.js` and every `functions/api/**` endpoint read
+`env.DB`.
 
 Then apply migrations following `migrations/README.md`. Inspect first; the
 baseline is a no-op on tables that already exist.
@@ -52,7 +52,7 @@ development copy `.dev.vars.example` to `.dev.vars`.
 | `GOOGLE_CLIENT_SECRET` | yes | OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | yes | Must match Google Cloud exactly |
 | `SESSION_SECRET` | yes | HMAC key for the OAuth state cookie; ≥32 random bytes |
-| `LIVE_RATES_API_KEY` | later | Not used by P0/P1 (no endpoint calls the provider yet) |
+| `LIVE_RATES_API_KEY` | yes | Live-Rates market data; read only server-side in `functions/_utils/provider.js` |
 | `OWNER_EMAIL` | optional | Overrides the built-in owner address |
 | `MASTER_ENCRYPTION_KEY` | optional | Only for the `app_settings` encrypted-key path |
 
@@ -94,7 +94,13 @@ npm run verify       # syntax check + node:test suites
 ```
 
 `npm run check` parses every `.js`/`.mjs` file in the repository.
-`npm test` runs the auth, OAuth-callback and migration tests.
+`npm test` runs the auth, OAuth-callback, migration and backend suites.
+`tests/backend.test.mjs` executes the real Pages Functions handlers against a
+SQLite database built from `migrations/` through `tests/helpers/d1.mjs`.
+
+What the suite does **not** cover: the live Live-Rates service, real Cloudflare
+D1, and Google's OAuth endpoints. Provider HTTP calls are stubbed because no
+`LIVE_RATES_API_KEY` exists in the test environment.
 
 ## 7. Owner account
 

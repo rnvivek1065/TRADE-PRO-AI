@@ -65,6 +65,23 @@ npx wrangler d1 execute <database-name> --remote --command "PRAGMA table_info(se
 npx wrangler d1 execute <database-name> --remote --command "SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM sessions) AS sessions;"
 ```
 
+## Step 3b — signals, usage and diagnostics (`0003`)
+
+```bash
+npx wrangler d1 execute <database-name> --remote --file migrations/0003_signals_and_limits.sql
+```
+
+This file is entirely `CREATE ... IF NOT EXISTS`, so it is safe and idempotent
+on an existing database. It does not touch `users`, `sessions` or
+`app_settings`, so it cannot alter a plan, role or account status. It adds:
+
+| Object | Purpose |
+| --- | --- |
+| `signals` | one row per generated signal, plus `counted` for rolling quota |
+| `usage_events` | quota reservations before provider spend |
+| `api_errors` | server-side error log surfaced to the owner dashboard |
+| `rate_limits` | D1-backed fixed-window counters |
+
 ## What the code requires at minimum
 
 | Table | Required columns |
