@@ -4,10 +4,10 @@ import {
   randomToken,
   sha256,
   sessionCookie,
-  clearStateCookie
+  clearStateCookie,
+  ownerEmail,
+  responseWithCookies
 } from "../../_utils/auth.js";
-
-const OWNER_EMAIL = "rnvivek1065@gmail.com";
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -16,14 +16,18 @@ export async function onRequestGet({ request, env }) {
   const returnedState = url.searchParams.get("state");
   const savedState = getCookie(request, "tradepro_oauth_state");
 
-  const failure = (message = "Google Login failed.") => {
-    return new Response(message, {
-      status: 400,
-      headers: {
-        "Set-Cookie": clearStateCookie(),
-        "Cache-Control": "no-store"
-      }
-    });
+  const failure = (message = "Google Login failed.", status = 400) => {
+    return responseWithCookies(
+      message,
+      {
+        status,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store"
+        }
+      },
+      [clearStateCookie()]
+    );
   };
 
   try {
@@ -63,6 +67,10 @@ export async function onRequestGet({ request, env }) {
     );
 
     if (!tokenResponse.ok) {
+      console.error("auth.callback: token exchange rejected", {
+        status: tokenResponse.status
+      });
+
       return failure("Google token verification failed.");
     }
 
@@ -78,6 +86,10 @@ export async function onRequestGet({ request, env }) {
     );
 
     if (!verifyResponse.ok) {
+      console.error("auth.callback: identity verification rejected", {
+        status: verifyResponse.status
+      });
+
       return failure("Google identity verification failed.");
     }
 
@@ -88,11 +100,19 @@ export async function onRequestGet({ request, env }) {
       "https://accounts.google.com"
     ].includes(identity.iss);
 
+    // Google returns a real boolean in the tokeninfo JSON, but the endpoint
+    // has historically returned the string "true". Accept both (and 1) so a
+    // verified account is never rejected because of a type change.
+    const emailVerified =
+      identity.email_verified === true ||
+      identity.email_verified === "true" ||
+      identity.email_verified === 1;
+
     const validIdentity =
       identity.aud === env.GOOGLE_CLIENT_ID &&
       validIssuer &&
       Number(identity.exp) * 1000 > Date.now() &&
-      identity.email_verified === "true" &&
+      emailVerified &&
       identity.sub &&
       identity.email;
 
@@ -101,7 +121,7 @@ export async function onRequestGet({ request, env }) {
     }
 
     const email = identity.email.toLowerCase();
-    const isOwner = email === OWNER_EMAIL;
+    const isOwner = email === ownerEmail(env);
 
     const now = new Date().toISOString();
 
@@ -137,6 +157,25 @@ export async function onRequestGet({ request, env }) {
       )
       .run();
 
+    // Deactivation must be enforced at login, not only on the next /me call.
+    // Otherwise the user receives a session cookie that every later request
+    // rejects, which looks like a broken login instead of a blocked account.
+    const account = await env.DB.prepare(`
+      SELECT status FROM users WHERE google_sub = ?
+    `)
+      .bind(identity.sub)
+      .first();
+
+    if (
+      account &&
+      String(account.status ?? "active").toLowerCase() !== "active"
+    ) {
+      return failure(
+        "This account has been deactivated. Please contact the owner.",
+        403
+      );
+    }
+
     const sessionToken = randomToken(48);
     const tokenHash = await sha256(sessionToken);
 
@@ -168,19 +207,28 @@ export async function onRequestGet({ request, env }) {
       )
       .run();
 
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: "/",
-        "Set-Cookie": [
-          sessionCookie(sessionToken),
-          clearStateCookie()
-        ].join(", "),
-        "Cache-Control": "no-store"
-      }
-    });
+    // Two independent Set-Cookie headers. Joining them with ", " produces one
+    // malformed header (RFC 6265 forbids comma-combining) and browsers may
+    // drop the session cookie, causing an immediate login loop.
+    return responseWithCookies(
+      null,
+      {
+        status: 302,
+        headers: {
+          Location: "/",
+          "Cache-Control": "no-store"
+        }
+      },
+      [sessionCookie(sessionToken), clearStateCookie()]
+    );
 
   } catch (error) {
-    return failure("Login could not be completed.");
+    // Logged without request details: the authorization code, id_token and
+    // client secret must never reach the logs.
+    console.error("auth.callback: unhandled failure", {
+      message: error?.message
+    });
+
+    return failure("Login could not be completed.", 500);
   }
 }

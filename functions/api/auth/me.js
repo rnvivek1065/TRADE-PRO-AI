@@ -21,13 +21,23 @@ export async function onRequestGet({ request, env }) {
         name: user.name,
         picture: user.picture,
         role: user.role,
+        isOwner: user.isOwner,
+        // Effective plan: 'basic' whenever a 'pro' subscription has expired.
         plan: user.plan,
+        storedPlan: user.storedPlan,
+        proActive: user.proActive,
+        proExpiresAt: user.proExpiresAt,
+        proExpired: user.proExpired,
         status: user.status,
-        proExpiresAt: user.pro_expires_at
+        sessionExpiresAt: user.sessionExpiresAt
       }
     });
 
-  } catch {
+  } catch (error) {
+    console.error("auth.me: failed", {
+      message: error?.message
+    });
+
     return json({
       authenticated: false,
       error: "Authentication service unavailable."

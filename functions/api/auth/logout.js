@@ -2,7 +2,7 @@ import {
   getCookie,
   sha256,
   clearSessionCookie,
-  json
+  jsonWithCookies
 } from "../../_utils/auth.js";
 
 export async function onRequestPost({ request, env }) {
@@ -20,18 +20,23 @@ export async function onRequestPost({ request, env }) {
         .run();
     }
 
-    return json(
+    // Cleared through the shared helper so the cookie is emitted as its own
+    // Set-Cookie header, matching the OAuth callback.
+    return jsonWithCookies(
       { success: true, message: "Logged out successfully." },
       200,
-      {
-        "Set-Cookie": clearSessionCookie()
-      }
+      [clearSessionCookie()]
     );
 
-  } catch {
-    return json(
+  } catch (error) {
+    console.error("auth.logout: failed", {
+      message: error?.message
+    });
+
+    return jsonWithCookies(
       { success: false, message: "Logout failed." },
-      500
+      500,
+      [clearSessionCookie()]
     );
   }
 }

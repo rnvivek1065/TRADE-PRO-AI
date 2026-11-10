@@ -1,5 +1,9 @@
 const COOKIE_NAME = "tradepro_session";
 const STATE_COOKIE = "tradepro_oauth_state";
+const DEFAULT_OWNER_EMAIL = "rnvivek1065@gmail.com";
+
+export const SESSION_MAX_AGE = 604800; // 7 days, seconds
+export const STATE_MAX_AGE = 600; // 10 minutes, seconds
 
 function toBase64Url(bytes) {
   let binary = "";
@@ -61,6 +65,29 @@ async function hmac(value, secret) {
   return toBase64Url(new Uint8Array(signature));
 }
 
+/**
+ * Compares two strings without an early exit, so the time taken does not
+ * reveal how many leading characters matched.
+ *
+ * The previous `signature !== expected` comparison short-circuits on the first
+ * differing byte. Length is normalised by always iterating over the longer
+ * input, and a length difference is folded into the accumulator instead of
+ * being returned immediately.
+ */
+export function timingSafeEqualString(a, b) {
+  const left = String(a ?? "");
+  const right = String(b ?? "");
+  const length = Math.max(left.length, right.length);
+
+  let mismatch = left.length === right.length ? 0 : 1;
+
+  for (let index = 0; index < length; index += 1) {
+    mismatch |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0);
+  }
+
+  return mismatch === 0;
+}
+
 export async function signState(payload, secret) {
   const encoded = toBase64Url(
     new TextEncoder().encode(JSON.stringify(payload))
@@ -81,7 +108,7 @@ export async function verifyState(value, secret) {
   const [encoded, signature] = parts;
   const expected = await hmac(encoded, secret);
 
-  if (signature !== expected) return null;
+  if (!timingSafeEqualString(signature, expected)) return null;
 
   try {
     const payload = JSON.parse(
@@ -111,7 +138,7 @@ export function getCookie(request, name) {
   return item ? item.substring(name.length + 1) : null;
 }
 
-export function sessionCookie(token, maxAge = 604800) {
+export function sessionCookie(token, maxAge = SESSION_MAX_AGE) {
   return `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
 }
 
@@ -119,7 +146,7 @@ export function clearSessionCookie() {
   return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
-export function stateCookie(value, maxAge = 600) {
+export function stateCookie(value, maxAge = STATE_MAX_AGE) {
   return `${STATE_COOKIE}=${value}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
 }
 
@@ -127,42 +154,44 @@ export function clearStateCookie() {
   return `${STATE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
-export async function getCurrentUser(request, env) {
-  if (!env.DB) {
-    throw new Error("Database is not configured.");
-  }
+/**
+ * Appends each cookie as its own Set-Cookie header.
+ *
+ * A Headers object holds a list for Set-Cookie; assigning a single joined
+ * string produces one malformed header (RFC 6265 forbids comma-combining),
+ * which is why the OAuth callback could lose the session cookie.
+ */
+export function appendCookies(headers, cookies = []) {
+  const result = new Headers(headers || {});
 
-  const token = getCookie(request, COOKIE_NAME);
-
-  if (!token) return null;
-
-  const tokenHash = await sha256(token);
-
-  const result = await env.DB.prepare(`
-    SELECT
-      u.google_sub,
-      u.email,
-      u.name,
-      u.picture,
-      u.role,
-      u.plan,
-      u.status,
-      u.pro_expires_at,
-      u.created_at,
-      s.expires_at
-    FROM sessions s
-    JOIN users u ON u.google_sub = s.google_sub
-    WHERE s.token_hash = ?
-      AND s.expires_at > ?
-  `)
-    .bind(tokenHash, new Date().toISOString())
-    .first();
-
-  if (!result || result.status !== "active") {
-    return null;
+  for (const cookie of cookies) {
+    if (cookie) {
+      result.append("Set-Cookie", cookie);
+    }
   }
 
   return result;
+}
+
+export function responseWithCookies(body, init = {}, cookies = []) {
+  return new Response(body, {
+    ...init,
+    headers: appendCookies(init.headers, cookies)
+  });
+}
+
+export function jsonWithCookies(data, status = 200, cookies = []) {
+  return responseWithCookies(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store"
+      }
+    },
+    cookies
+  );
 }
 
 export function json(data, status = 200, headers = {}) {
@@ -173,4 +202,131 @@ export function json(data, status = 200, headers = {}) {
       ...headers
     }
   });
-        }
+}
+
+/**
+ * Normalises a timestamp that may arrive as epoch seconds, epoch milliseconds
+ * or an ISO string. Existing databases created by hand may store any of these,
+ * so the auth code must not assume one representation.
+ */
+export function parseTime(value) {
+  if (value === null || value === undefined || value === "") return null;
+
+  if (value instanceof Date) {
+    const time = value.getTime();
+    return Number.isFinite(time) ? time : null;
+  }
+
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    // Values below 1e12 are seconds (1e12 ms is year 33658).
+    return value < 1e12 ? Math.round(value * 1000) : Math.round(value);
+  }
+
+  const text = String(value).trim();
+
+  if (text === "") return null;
+
+  const numeric = Number(text);
+
+  if (Number.isFinite(numeric)) {
+    return numeric < 1e12 ? Math.round(numeric * 1000) : Math.round(numeric);
+  }
+
+  const parsed = Date.parse(text);
+
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+export function ownerEmail(env) {
+  const configured = env?.OWNER_EMAIL;
+
+  if (typeof configured === "string" && configured.trim() !== "") {
+    return configured.trim().toLowerCase();
+  }
+
+  return DEFAULT_OWNER_EMAIL;
+}
+
+/**
+ * Turns a database row into the user object used by the API.
+ *
+ * Plan enforcement lives here: a 'pro' row whose pro_expires_at is in the past
+ * is reported as 'basic'. `storedPlan` keeps the raw database value so the
+ * owner dashboard can still show what was assigned.
+ *
+ * Missing optional columns fall back to defaults instead of throwing, so an
+ * older hand-created table keeps working.
+ */
+export function buildUser(row, env, now = Date.now()) {
+  const storedPlan = String(row?.plan ?? "basic").trim().toLowerCase();
+  const proExpiresAt = parseTime(row?.pro_expires_at);
+  const proExpired =
+    storedPlan === "pro" && proExpiresAt !== null && proExpiresAt <= now;
+  const plan = storedPlan === "pro" && !proExpired ? "pro" : "basic";
+
+  const email = String(row?.email ?? "").toLowerCase();
+  const role = String(row?.role ?? "user").trim().toLowerCase();
+  const isOwner = role === "owner" || (email !== "" && email === ownerEmail(env));
+
+  return {
+    googleSub: row?.google_sub ?? null,
+    email,
+    name: row?.name ?? "",
+    picture: row?.picture ?? "",
+    role: isOwner ? "owner" : role,
+    isOwner,
+    plan,
+    storedPlan,
+    proActive: plan === "pro",
+    proExpiresAt,
+    proExpired,
+    status: String(row?.status ?? "active").trim().toLowerCase(),
+    sessionExpiresAt: parseTime(row?.session_expires_at),
+    createdAt: row?.created_at ?? null
+  };
+}
+
+export async function getCurrentUser(request, env) {
+  if (!env?.DB) {
+    throw new Error("Database is not configured.");
+  }
+
+  const token = getCookie(request, COOKIE_NAME);
+
+  if (!token) return null;
+
+  const tokenHash = await sha256(token);
+
+  // `u.*` keeps this query working against an existing users table that has
+  // extra columns or is missing optional ones. Session expiry and status are
+  // evaluated below instead of inside SQL so both ISO strings and epoch
+  // numbers stored by an older schema are handled correctly.
+  const row = await env.DB.prepare(`
+    SELECT
+      u.*,
+      s.expires_at AS session_expires_at
+    FROM sessions s
+    JOIN users u ON u.google_sub = s.google_sub
+    WHERE s.token_hash = ?
+  `)
+    .bind(tokenHash)
+    .first();
+
+  if (!row) return null;
+
+  const now = Date.now();
+  const sessionExpiresAt = parseTime(row.session_expires_at);
+
+  if (sessionExpiresAt !== null && sessionExpiresAt <= now) {
+    return null;
+  }
+
+  const user = buildUser(row, env, now);
+
+  if (user.status !== "active") {
+    return null;
+  }
+
+  return user;
+}

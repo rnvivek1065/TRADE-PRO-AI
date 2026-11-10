@@ -64,7 +64,11 @@ export async function onRequestGet({ env }) {
         "Cache-Control": "no-store"
       }
     });
-  } catch {
+  } catch (error) {
+    console.error("auth.google: failed to start login", {
+      message: error?.message
+    });
+
     return new Response("Unable to start Google Login.", {
       status: 500
     });
