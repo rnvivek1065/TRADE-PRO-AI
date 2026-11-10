@@ -193,6 +193,10 @@ function providerResponse(data, status = 200) {
 function stubProvider(options = {}) {
   const { mode = "trend", outage = false } = options;
 
+  // The adapter caches series and quotes per isolate. Without this, an earlier
+  // test's successful response would mask an outage or empty-history case.
+  clearCache();
+
   globalThis.fetch = async input => {
     if (outage) throw new TypeError("provider unreachable");
 
@@ -552,7 +556,7 @@ test("invalid and excluded instruments are rejected", async () => {
     env,
     token,
     method: "POST",
-    body: signalBody({ market: "crypto" })
+    body: signalBody({ market: MARKET_IDS.find(id => id !== PICK.market) })
   });
   assert.equal(wrongMarket.status, 400);
   assert.equal(errCode(wrongMarket.json), "invalid_instrument");
@@ -1002,6 +1006,7 @@ test("migrations are additive, idempotent and preserve existing users", async ()
     // Strip `--` comments: the migrations document their own safety rules, and
     // prose mentioning DROP/TRUNCATE must not be read as an actual statement.
     const sql = migrationSql(name)
+      .replace(/\/\*[\s\S]*?\*\//g, "")
       .split("\n")
       .map(line => line.replace(/--.*$/, ""))
       .join("\n");
