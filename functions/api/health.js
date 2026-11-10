@@ -1,20 +1,31 @@
-export async function onRequestGet({ env }) {
-  const configured = Boolean(env.LIVE_RATES_API_KEY);
+import { getLiveRatesKey } from "../_utils/liveRates.js";
 
-  return new Response(
-    JSON.stringify({
+export async function onRequestGet({ env }) {
+  let liveRatesConfigured = false;
+  let storage = "not_configured";
+
+  try {
+    await getLiveRatesKey(env);
+    liveRatesConfigured = true;
+    storage = env.DB ? "D1" : "Cloudflare Secret";
+  } catch (error) {
+    liveRatesConfigured = false;
+  }
+
+  return Response.json(
+    {
       success: true,
       application: "TRADE PRO AI",
       backend: "online",
-      liveRatesConfigured: configured,
-      message: configured
-        ? "Live-Rates API key is configured."
-        : "Live-Rates API key is not configured yet."
-    }),
+      databaseConnected: Boolean(env.DB),
+      liveRatesConfigured,
+      keyStorage: storage,
+      message: liveRatesConfigured
+        ? "Backend is ready."
+        : "Live-Rates API key is not configured."
+    },
     {
-      status: 200,
       headers: {
-        "Content-Type": "application/json",
         "Cache-Control": "no-store"
       }
     }
