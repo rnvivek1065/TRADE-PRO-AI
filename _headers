@@ -1,0 +1,33 @@
+# TRADE PRO AI — static asset response headers (Cloudflare Pages)
+#
+# These rules apply to static assets only. Pages Functions responses set their
+# own headers (functions/_utils/auth.js -> json()/responseWithCookies()).
+#
+# The CSP below is deliberately permissive for inline script/style because the
+# current UI uses inline onclick/onchange handlers (index.html) and the
+# TradingView widget injects inline markup. Tightening script-src further
+# requires moving those handlers into script.js first.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://unpkg.com https://*.tradingview.com https://*.tradingview-widget.com; connect-src 'self' https://api.binance.com https://*.tradingview.com https://*.tradingview-widget.com; frame-src https://*.tradingview.com https://*.tradingview-widget.com
+
+# Never cache the HTML shell: it references the analysis scripts by name and
+# must not go stale after a deploy.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Source, migrations and docs must never be served as static files. They are
+# also excluded from upload via .assetsignore; this is defence in depth.
+/migrations/*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+
+/tests/*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store

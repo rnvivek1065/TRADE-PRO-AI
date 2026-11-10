@@ -1,0 +1,20 @@
+{
+  "name": "trade-pro-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TRADE PRO AI - AI trading analysis platform (Cloudflare Pages + D1)",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check": "node scripts/check-syntax.mjs",
+    "test": "node --test tests/",
+    "verify": "npm run check && npm test",
+    "db:inspect": "npx wrangler d1 execute trade-pro-ai --remote --command \"SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name\"",
+    "db:backup": "npx wrangler d1 export trade-pro-ai --remote --output backup-$(date +%Y%m%d-%H%M%S).sql",
+    "db:migrate:remote": "npx wrangler d1 execute trade-pro-ai --remote --file migrations/0001_baseline_auth_tables.sql",
+    "db:migrate:local": "npx wrangler d1 execute trade-pro-ai --local --file migrations/0001_baseline_auth_tables.sql",
+    "dev": "npx wrangler pages dev . --d1 DB"
+  }
+}

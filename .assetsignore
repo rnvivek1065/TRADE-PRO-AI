@@ -1,0 +1,20 @@
+# Cloudflare Pages: paths listed here are not uploaded as static assets.
+# Prevents migrations, tests and tooling from being publicly downloadable.
+functions
+functions/**
+migrations
+migrations/**
+tests
+tests/**
+scripts
+scripts/**
+docs
+docs/**
+node_modules
+node_modules/**
+package.json
+package-lock.json
+wrangler.toml
+.dev.vars
+.gitignore
+README.md

@@ -1,0 +1,37 @@
+# TRADE PRO AI — Cloudflare Pages configuration
+#
+# This project is a static site (repository root) plus Pages Functions in
+# `functions/`. There is no bundler: the browser loads the root *.js files
+# directly, so the "build output directory" is the repository root.
+#
+# NO SECRETS BELONG IN THIS FILE. Secrets are configured in the Cloudflare
+# dashboard (Settings -> Variables and Secrets) or in `.dev.vars` locally.
+
+name = "trade-pro-ai"
+compatibility_date = "2025-09-01"
+pages_build_output_dir = "."
+
+# ---------------------------------------------------------------------------
+# D1 binding
+# ---------------------------------------------------------------------------
+# The Functions read the database through `env.DB`. Replace the placeholder
+# below with the real database_id of your existing D1 database:
+#
+#   npx wrangler d1 list
+#
+# Keep `binding = "DB"` exactly as-is: functions/_utils/auth.js,
+# functions/api/auth/*.js, functions/_utils/liveRates.js and
+# functions/api/health.js all depend on that name.
+[[d1_databases]]
+binding = "DB"
+database_name = "trade-pro-ai"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# ---------------------------------------------------------------------------
+# Migrations
+# ---------------------------------------------------------------------------
+# Migrations are NOT applied automatically by Pages. Apply them deliberately
+# after inspecting the existing schema — see migrations/README.md.
+[[d1_databases.migrations_dir]]
+# (placeholder table is not used; `migrations_dir` is configured via the
+#  command line below instead, to avoid ambiguity with existing data)
